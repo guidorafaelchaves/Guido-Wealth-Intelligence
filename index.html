@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guido Wealth Intelligence — Versão 7.1</title>
+  <title>Guido Wealth Intelligence — Versão 7.2</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
@@ -161,10 +161,10 @@
   <div class="app">
     <header>
       <div class="brand">
-        <div class="logo">7.1</div>
+        <div class="logo">7.2</div>
         <div>
-          <h1>Guido Wealth Intelligence — Versão 7.1</h1>
-          <div class="subtitle">Google-first: arquivos B3 são processados na sessão e enviados ao Google Docs via Apps Script. A base patrimonial não é gravada no navegador. APIs GPT/BRAPI ficam apenas neste navegador.</div>
+          <h1>Guido Wealth Intelligence — Versão 7.2</h1>
+          <div class="subtitle">Google-first: arquivos B3 são processados na sessão e enviados ao Google Docs via Apps Script. A versão 7.2 consulta a BRAPI em lotes inteligentes para evitar o limite de ativos por requisição.</div>
         </div>
       </div>
       <div class="actions">
@@ -186,8 +186,8 @@
 
     <section id="portal" class="active">
       <div class="hero">
-        <div class="quote">Versão 7.1: Google como memória. Navegador como painel de operação.</div>
-        <p>O app processa o arquivo no momento, cria indicadores e envia snapshot ao Google. Antes de enviar, cria fingerprints para evitar repetição analítica de arquivos e eventos já capturados.</p>
+        <div class="quote">Versão 7.2: BRAPI em lotes, Google como memória e navegador como painel.</div>
+        <p>O app processa o arquivo no momento, cria indicadores e envia snapshot ao Google. A BRAPI agora é chamada em blocos de até 10 tickers, reduzindo erro de limite do plano e mantendo a leitura externa integrada.</p>
       </div>
 
       <div class="grid cols5" style="margin-top:14px">
@@ -266,7 +266,7 @@
           <div class="grid cols2" style="margin-top:12px">
             <label>BRAPI Token<input id="brapiToken" type="password" placeholder="token brapi" /></label>
             <label>Modo BRAPI<select id="brapiMode" onchange="saveConfigFromScreen()"><option value="off">Desligado</option><option value="manual">Manual</option><option value="auto">Automático nas perguntas</option></select></label>
-            <label>Limite tickers<input id="brapiLimit" type="number" min="1" max="30" value="12" oninput="saveConfigFromScreen()" /></label>
+            <label>Total máximo de tickers BRAPI<input id="brapiLimit" type="number" min="1" max="60" value="20" oninput="saveConfigFromScreen()" /></label><label>Tamanho do lote BRAPI<input id="brapiBatchSize" type="number" min="1" max="10" value="10" oninput="saveConfigFromScreen()" /></label>
             <label>Backend URL<input id="backendUrl" oninput="saveConfigFromScreen()" /></label>
           </div>
           <div class="actions" style="justify-content:flex-start;margin-top:12px">
@@ -284,7 +284,7 @@
     <section id="jsons"><div class="toolbar"><label>JSON<select id="jsonSelect" onchange="renderJson()"><option value="context">Contexto IA</option><option value="snapshot">Snapshot Google</option><option value="insight">Insight atual</option><option value="brapi">BRAPI</option><option value="state">Sessão completa</option></select></label><button onclick="copyJson()">Copiar JSON</button></div><pre id="jsonBox" class="jsonbox">{}</pre></section>
   </div>
 
-  <dialog id="configDialog"><form method="dialog" onsubmit="event.preventDefault();saveConfigFromDialog();configDialog.close();"><h2>Configuração GPT / BRAPI / Google</h2><div class="form-grid"><label class="full">OpenAI API Key local<input id="dlgOpenAiKey" type="password" /></label><label>Modelo GPT<input id="dlgOpenAiModel" /></label><label>Temperatura<input id="dlgTemperature" type="number" min="0" max="1" step="0.1" /></label><label>Modo IA<select id="dlgAiMode"><option value="backend">Backend Apps Script</option><option value="openai_direct">OpenAI direto</option><option value="local">Local</option></select></label><label class="full">BRAPI Token<input id="dlgBrapiToken" type="password" /></label><label>Modo BRAPI<select id="dlgBrapiMode"><option value="off">Desligado</option><option value="manual">Manual</option><option value="auto">Automático</option></select></label><label>Limite BRAPI<input id="dlgBrapiLimit" type="number" min="1" max="30" /></label><label class="full">Backend URL<input id="dlgBackendUrl" /></label><label class="full">System Prompt<textarea id="dlgSystemPrompt"></textarea></label></div><div class="actions" style="justify-content:flex-start;margin-top:14px"><button class="primary" type="submit">Salvar configuração</button><button type="button" class="green" onclick="saveApiKeysOnlyInBrowser()">Salvar APIs só neste navegador</button><button type="button" onclick="configDialog.close()">Cancelar</button></div></form></dialog>
+  <dialog id="configDialog"><form method="dialog" onsubmit="event.preventDefault();saveConfigFromDialog();configDialog.close();"><h2>Configuração GPT / BRAPI / Google</h2><div class="form-grid"><label class="full">OpenAI API Key local<input id="dlgOpenAiKey" type="password" /></label><label>Modelo GPT<input id="dlgOpenAiModel" /></label><label>Temperatura<input id="dlgTemperature" type="number" min="0" max="1" step="0.1" /></label><label>Modo IA<select id="dlgAiMode"><option value="backend">Backend Apps Script</option><option value="openai_direct">OpenAI direto</option><option value="local">Local</option></select></label><label class="full">BRAPI Token<input id="dlgBrapiToken" type="password" /></label><label>Modo BRAPI<select id="dlgBrapiMode"><option value="off">Desligado</option><option value="manual">Manual</option><option value="auto">Automático</option></select></label><label>Total máximo BRAPI<input id="dlgBrapiLimit" type="number" min="1" max="60" /></label><label>Tamanho do lote BRAPI<input id="dlgBrapiBatchSize" type="number" min="1" max="10" /></label><label class="full">Backend URL<input id="dlgBackendUrl" /></label><label class="full">System Prompt<textarea id="dlgSystemPrompt"></textarea></label></div><div class="actions" style="justify-content:flex-start;margin-top:14px"><button class="primary" type="submit">Salvar configuração</button><button type="button" class="green" onclick="saveApiKeysOnlyInBrowser()">Salvar APIs só neste navegador</button><button type="button" onclick="configDialog.close()">Cancelar</button></div></form></dialog>
 
   <script>
     const DEFAULT_BACKEND_URL = "https://script.google.com/macros/s/AKfycbzWx8kThrG0L-VAhC-W-RP7Q7KpcYwEEi1_dNM0p6i3859AbAL5Kv_gx6XMaXiRpevJ/exec";
@@ -299,7 +299,7 @@
         imports: [], rawSheets: [], assets: {}, positions: [], movements: [], income: [], events: [], performance: [],
         chat: [], currentInsight: null, brapiData: {}, context: null,
         backend: { ok: false, docUrl: null, lastPing: null },
-        config: { backendUrl: DEFAULT_BACKEND_URL, aiMode: "backend", openAiKey: "", openAiModel: "gpt-4.1-mini", temperature: 0.2, answerStyle: "visual_short", brapiToken: "", brapiMode: "off", brapiLimit: 12, systemPrompt: DEFAULT_PROMPT }
+        config: { backendUrl: DEFAULT_BACKEND_URL, aiMode: "backend", openAiKey: "", openAiModel: "gpt-4.1-mini", temperature: 0.2, answerStyle: "visual_short", brapiToken: "", brapiMode: "off", brapiLimit: 20, brapiBatchSize: 10, systemPrompt: DEFAULT_PROMPT }
       };
     }
 
@@ -697,18 +697,60 @@
       return [...new Set([...typed, ...top])].filter(validTicker);
     }
     async function maybeBrapi(q) { const tickers = extractTickers(q).slice(0, Number(state.config.brapiLimit || 12)); if (tickers.length) await fetchBrapi(tickers); }
-    async function fetchBrapi(tickers) {
+    async async function fetchBrapi(tickers) {
       if (!state.config.brapiToken) throw new Error("Token BRAPI não configurado.");
-      const url = "https://brapi.dev/api/quote/" + encodeURIComponent(tickers.join(",")) + "?modules=summaryProfile,financialData,defaultKeyStatistics&token=" + encodeURIComponent(state.config.brapiToken);
-      const r = await fetch(url);
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.message || "Erro BRAPI");
-      state.brapiData = { updatedAt: new Date().toISOString(), tickers, raw: data };
+
+      const uniqueTickers = [...new Set((tickers || []).filter(validTicker))].slice(0, Number(state.config.brapiLimit || 20));
+      const batchSize = Math.max(1, Math.min(10, Number(state.config.brapiBatchSize || 10)));
+      const batches = chunkArray(uniqueTickers, batchSize);
+      const allResults = [];
+      const errors = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        try {
+          setStatus("BRAPI: buscando lote " + (i + 1) + "/" + batches.length + " — " + batch.join(", "), "");
+          const url = "https://brapi.dev/api/quote/" + encodeURIComponent(batch.join(",")) + "?modules=summaryProfile,financialData,defaultKeyStatistics&token=" + encodeURIComponent(state.config.brapiToken);
+          const r = await fetch(url);
+          const data = await r.json();
+          if (!r.ok) throw new Error(data.message || "Erro BRAPI");
+          const results = data.results || data.stocks || [];
+          if (Array.isArray(results)) allResults.push(...results);
+          await sleep(350);
+        } catch (err) {
+          errors.push({ batch, message: err.message });
+        }
+      }
+
+      state.brapiData = {
+        updatedAt: new Date().toISOString(),
+        tickers: uniqueTickers,
+        batchSize,
+        batches: batches.length,
+        errors,
+        raw: { results: allResults }
+      };
       buildContext();
-      return data;
+
+      if (errors.length && allResults.length) {
+        setStatus("BRAPI parcialmente atualizada: " + allResults.length + " ativos lidos; " + errors.length + " lote(s) falharam.", "err");
+      } else if (errors.length && !allResults.length) {
+        throw new Error(errors.map(e => e.message).join(" | "));
+      }
+      return state.brapiData;
+    }
+
+    function chunkArray(arr, size) {
+      const out = [];
+      for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+      return out;
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
     }
     async function consultBrapiForTopAssets() {
-      try { setStatus("Buscando dados BRAPI...", ""); const tickers = extractTickers(document.getElementById("aiQuestion")?.value || ""); await fetchBrapi(tickers); setStatus("BRAPI atualizado: " + tickers.slice(0, 8).join(", "), "ok"); renderAll(); }
+      try { setStatus("Buscando dados BRAPI...", ""); const tickers = extractTickers(document.getElementById("aiQuestion")?.value || ""); await fetchBrapi(tickers); setStatus("BRAPI atualizado em lotes: " + ((state.brapiData.raw?.results || []).length) + " ativo(s) lidos.", "ok"); renderAll(); }
       catch (e) { setStatus("Erro BRAPI: " + e.message, "err"); }
     }
 
@@ -718,7 +760,8 @@
       document.getElementById("mAssets").textContent = Object.keys(state.assets).length;
       document.getElementById("mValue").textContent = money(state.context?.resumo?.valorTotal || 0);
       document.getElementById("mGoogle").textContent = state.backend.ok ? "OK" : "—";
-      document.getElementById("mBrapi").textContent = state.config.brapiToken ? "ON" : "—";
+      const brapiCount = state.brapiData?.raw?.results?.length || 0;
+      document.getElementById("mBrapi").textContent = brapiCount ? brapiCount : (state.config.brapiToken ? "ON" : "—");
     }
     function renderImport() {
       document.getElementById("importList").innerHTML = state.imports.length
@@ -727,7 +770,7 @@
       const counts = {};
       state.imports.forEach(i => counts[i.type] = (counts[i.type] || 0) + 1);
       document.getElementById("typeSummary").innerHTML = Object.entries(counts).map(([k, v]) => "<div class='alert ok'><strong>" + safe(k) + "</strong>: " + v + "</div>").join("") || "<div class='alert info'>Aguardando dados.</div>";
-      document.getElementById("qualityBox").innerHTML = "<div class='alert info'>Ativos válidos: " + Object.keys(state.assets).length + "<br>Linhas sem ticker são ignoradas nos cálculos principais.<br>Google-first: base B3 não persistida no navegador.<br>BRAPI: " + (state.brapiData?.updatedAt ? "atualizado em " + state.brapiData.updatedAt : "sem dados externos") + "</div>";
+      document.getElementById("qualityBox").innerHTML = "<div class='alert info'>Ativos válidos: " + Object.keys(state.assets).length + "<br>Linhas sem ticker são ignoradas nos cálculos principais.<br>Google-first: base B3 não persistida no navegador.<br>BRAPI: " + (state.brapiData?.updatedAt ? "atualizado em " + state.brapiData.updatedAt + " — " + ((state.brapiData.raw?.results || []).length) + " ativo(s) lidos" : "sem dados externos") + "</div>";
     }
     function renderChat() {
       const base = "<div class='chat-msg assistant'><strong>Guido Wealth IA v7.1</strong><p>Pronto para cruzar B3, memória Google, GPT e BRAPI. Faça perguntas incomuns e estratégicas.</p></div>";
@@ -765,6 +808,7 @@
       document.getElementById("brapiToken").value = state.config.brapiToken ? "••••••••••••••••" : "";
       document.getElementById("brapiMode").value = state.config.brapiMode;
       document.getElementById("brapiLimit").value = state.config.brapiLimit;
+      if (document.getElementById("brapiBatchSize")) document.getElementById("brapiBatchSize").value = state.config.brapiBatchSize || 10;
       document.getElementById("backendUrl").value = state.config.backendUrl;
       document.getElementById("systemPrompt").value = state.config.systemPrompt;
       document.getElementById("aiMode").value = state.config.aiMode;
@@ -785,7 +829,8 @@
       state.config.temperature = Number(document.getElementById("temperature")?.value || state.config.temperature || 0.2);
       state.config.answerStyle = document.getElementById("answerStyle")?.value || state.config.answerStyle;
       state.config.brapiMode = document.getElementById("brapiMode")?.value || state.config.brapiMode;
-      state.config.brapiLimit = Number(document.getElementById("brapiLimit")?.value || state.config.brapiLimit || 12);
+      state.config.brapiLimit = Number(document.getElementById("brapiLimit")?.value || state.config.brapiLimit || 20);
+      state.config.brapiBatchSize = Math.max(1, Math.min(10, Number(document.getElementById("brapiBatchSize")?.value || state.config.brapiBatchSize || 10)));
       state.config.backendUrl = document.getElementById("backendUrl")?.value || state.config.backendUrl;
       state.config.aiMode = document.getElementById("aiMode")?.value || state.config.aiMode;
       state.config.systemPrompt = document.getElementById("systemPrompt")?.value || state.config.systemPrompt;
@@ -802,6 +847,7 @@
       document.getElementById("dlgBrapiToken").placeholder = state.config.brapiToken ? "Token BRAPI já salvo neste navegador" : "Cole aqui seu token BRAPI";
       document.getElementById("dlgBrapiMode").value = state.config.brapiMode;
       document.getElementById("dlgBrapiLimit").value = state.config.brapiLimit;
+      document.getElementById("dlgBrapiBatchSize").value = state.config.brapiBatchSize || 10;
       document.getElementById("dlgBackendUrl").value = state.config.backendUrl;
       document.getElementById("dlgSystemPrompt").value = state.config.systemPrompt;
       document.getElementById("configDialog").showModal();
@@ -811,7 +857,8 @@
       state.config.temperature = Number(document.getElementById("dlgTemperature").value || state.config.temperature || 0.2);
       state.config.aiMode = document.getElementById("dlgAiMode").value || state.config.aiMode;
       state.config.brapiMode = document.getElementById("dlgBrapiMode").value || state.config.brapiMode;
-      state.config.brapiLimit = Number(document.getElementById("dlgBrapiLimit").value || state.config.brapiLimit || 12);
+      state.config.brapiLimit = Number(document.getElementById("dlgBrapiLimit").value || state.config.brapiLimit || 20);
+      state.config.brapiBatchSize = Math.max(1, Math.min(10, Number(document.getElementById("dlgBrapiBatchSize").value || state.config.brapiBatchSize || 10)));
       state.config.backendUrl = document.getElementById("dlgBackendUrl").value || state.config.backendUrl;
       state.config.systemPrompt = document.getElementById("dlgSystemPrompt").value || state.config.systemPrompt;
       saveApiKeysOnlyInBrowser();
