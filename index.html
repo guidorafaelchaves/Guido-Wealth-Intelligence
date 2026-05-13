@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guido Wealth Intelligence — Versão 5</title>
+  <title>Guido Wealth Intelligence — Versão 6</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
@@ -16,9 +16,9 @@
   <div class="app">
     <header>
       <div class="brand">
-        <div class="logo">V5</div>
+        <div class="logo">V6</div>
         <div>
-          <h1>Guido Wealth Intelligence — Versão 5</h1>
+          <h1>Guido Wealth Intelligence — Versão 6</h1>
           <div class="subtitle">Portal de conversação profunda com seus dados B3: combina base interna, memória patrimonial, GPT/OpenAI, BRAPI e heurísticas para responder como um ChatGPT financeiro pessoal, com gráficos curtos, visuais e objetivos.</div>
         </div>
       </div>
@@ -41,7 +41,7 @@
 
     <section id="portal" class="active">
       <div class="hero">
-        <div class="quote">Versão 5: pergunte diferente. O sistema cruza B3, memória, BRAPI e GPT.</div>
+        <div class="quote">Versão 6: upload corrigido, sem estourar o limite do navegador.</div>
         <p>As respostas foram redesenhadas para serem mais curtas, visuais e úteis. Enquanto a IA pensa, o painel mostra o que está sendo calculado. Depois, aparecem cards, rankings, barras e missões objetivas.</p>
       </div>
       <div class="grid cols5" style="margin-top:14px">
@@ -130,13 +130,117 @@
 
   <script>
     const DEFAULT_BACKEND_URL="https://script.google.com/macros/s/AKfycbzWx8kThrG0L-VAhC-W-RP7Q7KpcYwEEi1_dNM0p6i3859AbAL5Kv_gx6XMaXiRpevJ/exec";
-    const LS="gwi_v5_portal_profundo";
+    const LS="gwi_v6_portal_profundo_sem_quota";
     const BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
     const defaultPrompt=`Você é o Guido Wealth IA — Versão 5. Responda como um ChatGPT financeiro profundo, mas usando os dados B3 do usuário como base central. Use também dados BRAPI quando disponíveis. Seja curto, visual e estratégico. Separe fatos, riscos, interpretação e missões. Não dê ordem absoluta de compra ou venda; use linguagem de apoio à decisão. Prefira resposta objetiva, com poucos parágrafos e bons insights.`;
     let state=loadState();
     function initialState(){return{imports:[],rawSheets:[],assets:{},positions:[],movements:[],income:[],events:[],performance:[],chat:[],currentInsight:null,pinned:[],brapiData:{},backend:{ok:false,docUrl:null,lastPing:null},config:{backendUrl:DEFAULT_BACKEND_URL,aiMode:'backend',openAiKey:'',openAiModel:'gpt-4.1-mini',temperature:0.2,answerStyle:'visual_short',brapiToken:'',brapiMode:'off',brapiLimit:12,systemPrompt:defaultPrompt}}}
-    function loadState(){try{return Object.assign(initialState(),JSON.parse(localStorage.getItem(LS))||{})}catch(e){return initialState()}}
-    function saveState(){localStorage.setItem(LS,JSON.stringify(state));renderAll()}
+    function loadState(){
+      try {
+        const saved = JSON.parse(localStorage.getItem(LS)) || {};
+        const base = initialState();
+        return deepMerge(base, saved);
+      } catch(e) {
+        return initialState();
+      }
+    }
+
+    function deepMerge(base, saved){
+      for(const k in saved){
+        if(saved[k] && typeof saved[k] === 'object' && !Array.isArray(saved[k]) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) base[k] = deepMerge(base[k], saved[k]);
+        else base[k] = saved[k];
+      }
+      if(!base.rawSheets) base.rawSheets = [];
+      return base;
+    }
+    function saveState(){
+      persistStateSafely();
+      renderAll();
+    }
+
+    function persistStateSafely(){
+      const light = makeLightStateForStorage();
+      try {
+        localStorage.setItem(LS, JSON.stringify(light));
+      } catch (err) {
+        console.warn('Falha ao salvar estado completo. Tentando versão ultraleve.', err);
+        const ultra = makeUltraLightStateForStorage(light);
+        try {
+          localStorage.setItem(LS, JSON.stringify(ultra));
+          setStatus('Base importada. Salvamento local ultraleve ativado para não estourar o limite do navegador.', 'ok');
+        } catch (err2) {
+          console.error('Falha também no salvamento ultraleve.', err2);
+          setStatus('Arquivo lido, mas o navegador não conseguiu salvar tudo no localStorage. Exporte backup ou reduza dados.', 'err');
+        }
+      }
+    }
+
+    function makeLightStateForStorage(){
+      const light = {
+        ...state,
+        rawSheets: [],
+        chat: (state.chat || []).slice(-40),
+        brapiData: slimBrapiData(state.brapiData || {})
+      };
+      light.imports = (state.imports || []).map(i => ({
+        id: i.id,
+        fileName: i.fileName,
+        type: i.type,
+        reason: i.reason,
+        rowCount: i.rowCount,
+        confidence: i.confidence
+      }));
+      return light;
+    }
+
+    function makeUltraLightStateForStorage(light){
+      return {
+        ...light,
+        movements: (light.movements || []).slice(-1200),
+        income: (light.income || []).slice(-1200),
+        events: (light.events || []).slice(0, 800),
+        performance: (light.performance || []).slice(0, 800),
+        chat: (light.chat || []).slice(-20),
+        currentInsight: light.currentInsight ? {
+          id: light.currentInsight.id,
+          title: light.currentInsight.title,
+          summary: light.currentInsight.summary,
+          metrics: light.currentInsight.metrics,
+          charts: light.currentInsight.charts,
+          warnings: light.currentInsight.warnings,
+          missions: light.currentInsight.missions,
+          nextQuestions: light.currentInsight.nextQuestions,
+          question: light.currentInsight.question,
+          intent: light.currentInsight.intent,
+          createdAt: light.currentInsight.createdAt
+        } : null
+      };
+    }
+
+    function slimBrapiData(data){
+      if(!data || !data.raw) return data || {};
+      const results = data.raw.results || data.raw.stocks || [];
+      return {
+        updatedAt: data.updatedAt,
+        tickers: data.tickers || [],
+        raw: {
+          results: (Array.isArray(results) ? results : []).slice(0, 30).map(r => ({
+            symbol: r.symbol,
+            shortName: r.shortName,
+            longName: r.longName,
+            currency: r.currency,
+            regularMarketPrice: r.regularMarketPrice,
+            regularMarketChangePercent: r.regularMarketChangePercent,
+            marketCap: r.marketCap,
+            dividendYield: r.dividendYield,
+            priceEarnings: r.priceEarnings,
+            bookValue: r.bookValue,
+            sector: r.sector,
+            industry: r.industry
+          }))
+        }
+      };
+    }
     function money(v){return BRL.format(Number(v||0))}function num(v){if(v===null||v===undefined||v==='')return 0;if(typeof v==='number')return v;let s=String(v).trim().replace(/R\$\s?/g,'').replace(/\./g,'').replace(',','.').replace('%','');let n=Number(s);return isNaN(n)?0:n}function safe(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}function cleanText(s){return String(s||'').replace(/\\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim()}function showPanel(id,el){document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderAll()}
 
     fileInput.addEventListener('change',e=>handleFiles(e.target.files));fileInput2.addEventListener('change',e=>handleFiles(e.target.files));['dragenter','dragover'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.add('drag')}));['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.remove('drag')}));dropzone.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
@@ -166,7 +270,7 @@
     async function askOpenAI(question){if(!state.config.openAiKey)throw new Error('API OpenAI não configurada.');const payload={model:state.config.openAiModel,temperature:Number(state.config.temperature||0.2),messages:[{role:'system',content:state.config.systemPrompt},{role:'user',content:`Pergunta: ${question}\n\nDADOS INTERNOS B3:\n${JSON.stringify(state.context,null,2)}\n\nDADOS BRAPI:\n${JSON.stringify(state.brapiData,null,2)}`}]};const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.config.openAiKey},body:JSON.stringify(payload)});const data=await r.json();if(!r.ok)throw new Error(data.error?.message||'Erro OpenAI');return data.choices?.[0]?.message?.content||'OpenAI respondeu sem texto.'}
     async function maybeBrapi(q){const tickers=extractTickers(q).slice(0,Number(state.config.brapiLimit||12));if(tickers.length)await fetchBrapi(tickers)}function extractTickers(q){const typed=String(q).toUpperCase().match(/\b[A-Z]{4}\d{1,2}[A-Z]?\b/g)||[];const top=[...state.positions].sort((a,b)=>b.valor-a.valor).slice(0,Number(state.config.brapiLimit||12)).map(p=>p.ticker);return [...new Set([...typed,...top])].filter(validTicker)}async function fetchBrapi(tickers){if(!state.config.brapiToken)throw new Error('Token BRAPI não configurado.');const url=`https://brapi.dev/api/quote/${encodeURIComponent(tickers.join(','))}?modules=summaryProfile,financialData,defaultKeyStatistics&token=${encodeURIComponent(state.config.brapiToken)}`;const r=await fetch(url);const data=await r.json();if(!r.ok)throw new Error(data.message||'Erro BRAPI');state.brapiData={updatedAt:new Date().toISOString(),tickers,raw:data};buildContext();return data}async function consultBrapiForTopAssets(){try{setStatus('Buscando dados BRAPI...', '');const tickers=extractTickers(aiQuestion.value||'');await fetchBrapi(tickers);setStatus('BRAPI atualizado: '+tickers.slice(0,8).join(', '),'ok');saveState()}catch(e){setStatus('Erro BRAPI: '+e.message,'err')}}
 
-    function renderAll(){renderMetrics();renderImport();renderChat();renderInsight();renderConfig();renderTables();renderJson()}function renderMetrics(){mFiles.textContent=state.imports.length;mAssets.textContent=Object.keys(state.assets).length;mValue.textContent=money(state.context?.resumo?.valorTotal||0);mGpt.textContent=state.config.openAiKey?'API':state.config.aiMode==='backend'?'Back':'—';mBrapi.textContent=state.config.brapiToken?'ON':'—'}function renderImport(){importList.innerHTML=state.imports.length?state.imports.map(i=>`<div class="file-item"><div><strong>${safe(i.fileName)}</strong><br><small>${safe(i.type)} • ${i.rowCount||0} linhas • ${safe(i.reason)}</small></div><span class="pill info">${safe(i.type)}</span></div>`).join(''):'<div class="alert info">Nenhum arquivo importado ainda.</div>';const counts={};state.imports.forEach(i=>counts[i.type]=(counts[i.type]||0)+1);typeSummary.innerHTML=Object.entries(counts).map(([k,v])=>`<div class="alert ok"><strong>${safe(k)}</strong>: ${v}</div>`).join('')||'<div class="alert info">Aguardando dados.</div>';qualityBox.innerHTML=`<div class="alert info">Ativos válidos: ${Object.keys(state.assets).length}<br>Linhas sem ticker são ignoradas nos cálculos principais.<br>BRAPI: ${state.brapiData?.updatedAt?'atualizado em '+state.brapiData.updatedAt:'sem dados externos'}</div>`}function renderChat(){const base='<div class="chat-msg assistant"><strong>Guido Wealth IA v5</strong><p>Pronto para cruzar B3, memória, GPT e BRAPI. Faça perguntas incomuns e estratégicas.</p></div>';chatHistory.innerHTML=base+(state.chat||[]).map(m=>`<div class="chat-msg ${m.role}"><strong>${m.role==='user'?'Você':'Guido Wealth IA'}</strong><p>${safe(cleanText(m.text))}</p></div>`).join('');chatHistory.scrollTop=chatHistory.scrollHeight}function renderInsight(){const ins=state.currentInsight;if(!ins){dynamicResults.innerHTML='<div class="alert info">Faça uma pergunta para gerar cards, gráficos e missões.</div>';return}if(ins.intent==='thinking'){dynamicResults.innerHTML=`<div class="thinking-panel"><div class="thinking-header"><span class="pulse-orb"></span><span>Pensando e montando visualizações...</span></div><div class="thinking-bar"><span></span></div><div class="thinking-steps"><div class="thinking-step active"><span>1. Pergunta</span><strong>${safe(ins.question.slice(0,42))}</strong></div><div class="thinking-step active"><span>2. Dados B3</span><strong>${Object.keys(state.assets).length} ativos</strong></div><div class="thinking-step active"><span>3. BRAPI</span><strong>${state.brapiData?.updatedAt?'ativo':'opcional'}</strong></div><div class="thinking-step"><span>4. Visual</span><strong>criando</strong></div></div></div>`;return}dynamicResults.innerHTML=`<h2>${safe(ins.title)}</h2><div class="visual-answer"><strong>Resposta curta</strong><br>${safe(cleanText(ins.summary))}</div><div class="grid cols3" style="margin-top:12px">${ins.metrics.map(m=>`<div class="impact-card"><div class="big-number">${safe(m.value)}</div><div class="caption">${safe(m.label)}</div></div>`).join('')}</div>${ins.charts.map(renderChart).join('')}${ins.warnings.map(w=>`<div class="alert warn"><strong>Alerta:</strong> ${safe(w)}</div>`).join('')}<h3>Missões</h3>${ins.missions.map(m=>`<div class="alert purple">${safe(m)}</div>`).join('')}<div class="quick">${ins.nextQuestions.map(q=>`<button onclick="askPreset('${safe(q).replace(/'/g,'&#039;')}')">${safe(q)}</button>`).join('')}</div>`}function renderChart(ch){const max=Math.max(...(ch.data||[]).map(x=>Number(x[ch.valueKey]||0)),1);return `<div class="card" style="box-shadow:none;margin-top:12px"><h3>${safe(ch.title)}</h3>${(ch.data||[]).map(x=>{const v=Number(x[ch.valueKey]||0);const w=Math.max(6,Math.min(100,v/max*100));const show=ch.format==='money'?money(v):ch.format==='percent'?v.toFixed(1)+'%':v;return `<div class="chart-line"><span>${safe(x[ch.labelKey])}</span><div class="bar-wrap"><div class="bar" style="width:${w}%"></div></div><strong>${show}</strong></div>`}).join('')}<div class="sparkline">${(ch.data||[]).slice(0,16).map(x=>{const v=Number(x[ch.valueKey]||0);return `<span style="height:${Math.max(8,Math.min(100,v/max*100))}%"></span>`}).join('')}</div></div>`}function renderConfig(){
+    function renderAll(){renderMetrics();renderImport();renderChat();renderInsight();renderConfig();renderTables();renderJson()}function renderMetrics(){mFiles.textContent=state.imports.length;mAssets.textContent=Object.keys(state.assets).length;mValue.textContent=money(state.context?.resumo?.valorTotal||0);mGpt.textContent=state.config.openAiKey?'API':state.config.aiMode==='backend'?'Back':'—';mBrapi.textContent=state.config.brapiToken?'ON':'—'}function renderImport(){importList.innerHTML=state.imports.length?state.imports.map(i=>`<div class="file-item"><div><strong>${safe(i.fileName)}</strong><br><small>${safe(i.type)} • ${i.rowCount||0} linhas • ${safe(i.reason)}</small></div><span class="pill info">${safe(i.type)}</span></div>`).join(''):'<div class="alert info">Nenhum arquivo importado ainda.</div><div class="alert purple"><strong>Versão 6:</strong> os arquivos grandes são lidos e transformados em carteira, mas as planilhas brutas não ficam salvas no localStorage. Isso evita o erro de limite do navegador.</div>';const counts={};state.imports.forEach(i=>counts[i.type]=(counts[i.type]||0)+1);typeSummary.innerHTML=Object.entries(counts).map(([k,v])=>`<div class="alert ok"><strong>${safe(k)}</strong>: ${v}</div>`).join('')||'<div class="alert info">Aguardando dados.</div>';qualityBox.innerHTML=`<div class="alert info">Ativos válidos: ${Object.keys(state.assets).length}<br>Linhas sem ticker são ignoradas nos cálculos principais.<br>BRAPI: ${state.brapiData?.updatedAt?'atualizado em '+state.brapiData.updatedAt:'sem dados externos'}</div>`}function renderChat(){const base='<div class="chat-msg assistant"><strong>Guido Wealth IA v5</strong><p>Pronto para cruzar B3, memória, GPT e BRAPI. Faça perguntas incomuns e estratégicas.</p></div>';chatHistory.innerHTML=base+(state.chat||[]).map(m=>`<div class="chat-msg ${m.role}"><strong>${m.role==='user'?'Você':'Guido Wealth IA'}</strong><p>${safe(cleanText(m.text))}</p></div>`).join('');chatHistory.scrollTop=chatHistory.scrollHeight}function renderInsight(){const ins=state.currentInsight;if(!ins){dynamicResults.innerHTML='<div class="alert info">Faça uma pergunta para gerar cards, gráficos e missões.</div>';return}if(ins.intent==='thinking'){dynamicResults.innerHTML=`<div class="thinking-panel"><div class="thinking-header"><span class="pulse-orb"></span><span>Pensando e montando visualizações...</span></div><div class="thinking-bar"><span></span></div><div class="thinking-steps"><div class="thinking-step active"><span>1. Pergunta</span><strong>${safe(ins.question.slice(0,42))}</strong></div><div class="thinking-step active"><span>2. Dados B3</span><strong>${Object.keys(state.assets).length} ativos</strong></div><div class="thinking-step active"><span>3. BRAPI</span><strong>${state.brapiData?.updatedAt?'ativo':'opcional'}</strong></div><div class="thinking-step"><span>4. Visual</span><strong>criando</strong></div></div></div>`;return}dynamicResults.innerHTML=`<h2>${safe(ins.title)}</h2><div class="visual-answer"><strong>Resposta curta</strong><br>${safe(cleanText(ins.summary))}</div><div class="grid cols3" style="margin-top:12px">${ins.metrics.map(m=>`<div class="impact-card"><div class="big-number">${safe(m.value)}</div><div class="caption">${safe(m.label)}</div></div>`).join('')}</div>${ins.charts.map(renderChart).join('')}${ins.warnings.map(w=>`<div class="alert warn"><strong>Alerta:</strong> ${safe(w)}</div>`).join('')}<h3>Missões</h3>${ins.missions.map(m=>`<div class="alert purple">${safe(m)}</div>`).join('')}<div class="quick">${ins.nextQuestions.map(q=>`<button onclick="askPreset('${safe(q).replace(/'/g,'&#039;')}')">${safe(q)}</button>`).join('')}</div>`}function renderChart(ch){const max=Math.max(...(ch.data||[]).map(x=>Number(x[ch.valueKey]||0)),1);return `<div class="card" style="box-shadow:none;margin-top:12px"><h3>${safe(ch.title)}</h3>${(ch.data||[]).map(x=>{const v=Number(x[ch.valueKey]||0);const w=Math.max(6,Math.min(100,v/max*100));const show=ch.format==='money'?money(v):ch.format==='percent'?v.toFixed(1)+'%':v;return `<div class="chart-line"><span>${safe(x[ch.labelKey])}</span><div class="bar-wrap"><div class="bar" style="width:${w}%"></div></div><strong>${show}</strong></div>`}).join('')}<div class="sparkline">${(ch.data||[]).slice(0,16).map(x=>{const v=Number(x[ch.valueKey]||0);return `<span style="height:${Math.max(8,Math.min(100,v/max*100))}%"></span>`}).join('')}</div></div>`}function renderConfig(){
       loadApiKeysOnlyFromBrowser();
       openAiKey.value = state.config.openAiKey ? '••••••••••••••••' : '';
       openAiModel.value = state.config.openAiModel;
