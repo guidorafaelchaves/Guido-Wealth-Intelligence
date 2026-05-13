@@ -1,0 +1,2693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Guido Wealth Intelligence — Painel IA Patrimonial</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #050711;
+      --bg2: #0b1020;
+      --panel: #101827;
+      --panel2: #162033;
+      --line: #2a3650;
+      --text: #f8fafc;
+      --muted: #9aa8bd;
+      --accent: #38bdf8;
+      --green: #22c55e;
+      --gold: #f59e0b;
+      --red: #ef4444;
+      --purple: #a78bfa;
+      --blue: #2563eb;
+      --radius: 22px;
+      --shadow: 0 22px 70px rgba(0,0,0,.42);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(56,189,248,.18), transparent 30%),
+        radial-gradient(circle at 82% 5%, rgba(167,139,250,.12), transparent 30%),
+        radial-gradient(circle at 50% 100%, rgba(34,197,94,.08), transparent 35%),
+        linear-gradient(180deg, #050711, #0b1020 42%, #050711);
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 1540px;
+      margin: auto;
+      padding: 22px 18px 96px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .logo {
+      width: 64px;
+      height: 64px;
+      border-radius: 22px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--green));
+      color: #04101d;
+      font-size: 29px;
+      font-weight: 950;
+      box-shadow: 0 15px 36px rgba(56,189,248,.28);
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      font-size: 31px;
+      line-height: 1.08;
+      margin: 0 0 6px;
+      letter-spacing: -.035em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 980px;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    button,
+    .btn,
+    label.btn {
+      border: 1px solid var(--line);
+      background: var(--panel2);
+      color: var(--text);
+      border-radius: 15px;
+      padding: 11px 14px;
+      font-weight: 900;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      transition: .18s ease;
+      font-size: 13px;
+    }
+
+    button:hover,
+    .btn:hover,
+    label.btn:hover {
+      transform: translateY(-1px);
+      border-color: #51617a;
+    }
+
+    .primary {
+      border: 0;
+      background: linear-gradient(135deg, var(--accent), var(--green));
+      color: #04101d;
+    }
+
+    .gold {
+      border: 0;
+      background: linear-gradient(135deg, var(--gold), #f97316);
+      color: #111827;
+    }
+
+    .danger {
+      background: #2c1216;
+      border-color: #7f1d1d;
+      color: #fecaca;
+    }
+
+    .green {
+      background: #0f2a1c;
+      border-color: #166534;
+      color: #bbf7d0;
+    }
+
+    .blue {
+      background: #0d1e3c;
+      border-color: #1d4ed8;
+      color: #bfdbfe;
+    }
+
+    .tabs {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      gap: 8px;
+      overflow: auto;
+      background: rgba(7,11,22,.84);
+      border: 1px solid var(--line);
+      border-radius: 19px;
+      padding: 8px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 18px 45px rgba(0,0,0,.28);
+      margin-top: 18px;
+    }
+
+    .tab {
+      white-space: nowrap;
+      padding: 10px 13px;
+      border-radius: 13px;
+      color: var(--muted);
+      font-weight: 950;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: #06111f;
+    }
+
+    section {
+      display: none;
+      margin-top: 18px;
+    }
+
+    section.active {
+      display: block;
+    }
+
+    .hero {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      padding: 22px;
+      background: linear-gradient(135deg, rgba(17,24,39,.96), rgba(9,14,25,.97));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero:after {
+      content: "";
+      position: absolute;
+      right: -110px;
+      top: -120px;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(56,189,248,.08);
+      pointer-events: none;
+    }
+
+    .quote {
+      font-size: 22px;
+      font-weight: 950;
+      color: #e0f2fe;
+      margin-bottom: 8px;
+      letter-spacing: -.025em;
+    }
+
+    .hero p {
+      color: #cbd5e1;
+      max-width: 1120px;
+      line-height: 1.58;
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .cols4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .cols3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .cols2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(12,18,31,.98));
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    h2, h3 {
+      margin: 0 0 12px;
+      letter-spacing: -.025em;
+    }
+
+    h2 { font-size: 22px; }
+    h3 { font-size: 17px; }
+
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+    .mono { font-family: var(--mono); }
+
+    .metric .label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
+    .metric .value {
+      font-size: 27px;
+      font-weight: 950;
+      margin: 6px 0;
+      letter-spacing: -.04em;
+    }
+
+    .metric .note {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #0b1220;
+      color: #dbeafe;
+      font-size: 12px;
+      font-weight: 850;
+      margin: 2px;
+    }
+
+    .pill.ok { border-color: #16a34a; color: #bbf7d0; }
+    .pill.warn { border-color: #f59e0b; color: #fde68a; }
+    .pill.bad { border-color: #dc2626; color: #fecaca; }
+    .pill.info { border-color: #38bdf8; color: #bae6fd; }
+    .pill.purple { border-color: #a78bfa; color: #ddd6fe; }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: end;
+      margin: 0 0 12px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      background: #08111f;
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 10px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 96px;
+      resize: vertical;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      color: var(--muted);
+      font-weight: 850;
+      font-size: 12px;
+    }
+
+    .dropzone {
+      border: 2px dashed #355071;
+      background: linear-gradient(135deg, rgba(56,189,248,.08), rgba(34,197,94,.05));
+      border-radius: 26px;
+      padding: 30px;
+      text-align: center;
+      min-height: 210px;
+      display: grid;
+      place-items: center;
+      transition: .18s ease;
+    }
+
+    .dropzone.drag {
+      border-color: var(--accent);
+      background: rgba(56,189,248,.14);
+      transform: scale(1.006);
+    }
+
+    .dropzone .big {
+      font-size: 26px;
+      font-weight: 950;
+      margin-bottom: 6px;
+      color: #e0f2fe;
+    }
+
+    .dropzone p {
+      color: var(--muted);
+      margin: 0 auto 16px;
+      max-width: 820px;
+      line-height: 1.5;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: #dbeafe;
+      background: rgba(255,255,255,.025);
+      position: sticky;
+      top: 58px;
+      z-index: 2;
+    }
+
+    tr:hover td {
+      background: rgba(255,255,255,.025);
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 650px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #08111f;
+    }
+
+    .alert {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #0a1220;
+      margin: 8px 0;
+      line-height: 1.45;
+    }
+
+    .alert.warn { border-color: #7c4a03; background: #211707; }
+    .alert.ok { border-color: #166534; background: #0c1e14; }
+    .alert.info { border-color: #075985; background: #081b27; }
+    .alert.danger { border-color: #7f1d1d; background: #220f12; }
+    .alert.purple { border-color: #6d28d9; background: #170f2b; }
+
+    .jsonbox {
+      background: #030712;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      max-height: 640px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: #d1fae5;
+      white-space: pre-wrap;
+      line-height: 1.42;
+    }
+
+    .file-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .file-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      background: #0a1220;
+    }
+
+    .file-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .file-item small {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .bar-wrap {
+      height: 14px;
+      background: #09111f;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--green), var(--gold));
+      width: 0%;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .asset-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #0a1220;
+      padding: 13px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .asset-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .asset-head strong {
+      font-size: 18px;
+    }
+
+    .asset-value {
+      font-size: 19px;
+      font-weight: 950;
+      color: #bbf7d0;
+    }
+
+    .ai-shell {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-items: start;
+      margin-top: 14px;
+    }
+
+    .chat-history {
+      display: grid;
+      gap: 10px;
+      max-height: 420px;
+      overflow: auto;
+      background: #07101f;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .chat-msg {
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #0a1220;
+    }
+
+    .chat-msg.user {
+      background: #0d1e3c;
+      border-color: #1d4ed8;
+    }
+
+    .chat-msg.assistant {
+      background: #0c1e14;
+      border-color: #166534;
+    }
+
+    .chat-msg strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .chat-msg p {
+      margin: 0;
+      color: #dbeafe;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .quick-prompts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .quick-prompts button {
+      font-size: 12px;
+      padding: 9px 10px;
+    }
+
+    .dynamic-results {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mini-result {
+      border: 1px solid var(--line);
+      background: #0a1220;
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .mini-result strong {
+      display: block;
+      font-size: 20px;
+      color: #bbf7d0;
+    }
+
+    .mini-result span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 850;
+    }
+
+    .chart-line {
+      display: grid;
+      grid-template-columns: 130px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      margin: 9px 0;
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+
+    .backend-status {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #08111f;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .backend-status.ok {
+      border-color: #166534;
+      color: #bbf7d0;
+      background: #0c1e14;
+    }
+
+    .backend-status.err {
+      border-color: #7f1d1d;
+      color: #fecaca;
+      background: #220f12;
+    }
+
+    dialog {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      color: var(--text);
+      width: min(900px, calc(100% - 24px));
+      box-shadow: 0 30px 90px rgba(0,0,0,.72);
+    }
+
+    dialog::backdrop {
+      background: rgba(0,0,0,.72);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .full {
+      grid-column: 1 / -1;
+    }
+
+    .footer-note {
+      margin: 18px 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.62);
+      z-index: 100;
+      place-items: center;
+    }
+
+    .loading.active {
+      display: grid;
+    }
+
+    .loader {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 22px;
+      background: #07101f;
+      box-shadow: var(--shadow);
+      max-width: 520px;
+      text-align: center;
+    }
+
+    .loader strong {
+      font-size: 20px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .spinner {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 4px solid #1e293b;
+      border-top-color: var(--accent);
+      margin: 0 auto 14px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media(max-width: 980px) {
+      header { flex-direction: column; }
+      .actions { justify-content: flex-start; }
+      .cols4, .cols3, .cols2, .split, .ai-shell, .form-grid { grid-template-columns: 1fr; }
+      th { position: static; }
+      .app { padding: 14px 10px 88px; }
+      .tabs { border-radius: 15px; }
+      .tab { font-size: 12px; }
+      .file-item { grid-template-columns: 1fr; }
+      .hero { border-radius: 20px; }
+      .dropzone { padding: 18px; }
+      .metric .value { font-size: 23px; }
+      .chart-line { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="loading" id="loading">
+    <div class="loader">
+      <div class="spinner"></div>
+      <strong id="loadingTitle">Processando arquivos...</strong>
+      <div class="muted" id="loadingText">Lendo dados e montando JSONs patrimoniais.</div>
+    </div>
+  </div>
+
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">GWI</div>
+        <div>
+          <h1>Guido Wealth Intelligence</h1>
+          <div class="subtitle">
+            Uma interface limpa: primeiro o usuário entrega os dados; depois conversa com a IA; por fim recebe gráficos,
+            índices, pareceres, alertas e respostas dinâmicas baseadas na B3, na memória patrimonial e, futuramente, na internet.
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <label class="btn primary">
+          Importar Dados
+          <input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.pdf,.json" multiple style="display:none" />
+        </label>
+        <button class="gold" onclick="exportAllJson()">Exportar Base</button>
+        <label class="btn">
+          Importar Backup
+          <input type="file" accept=".json" style="display:none" onchange="importBackup(event)" />
+        </label>
+        <button onclick="testBackend()" class="green">Testar Backend</button>
+        <button onclick="clearAll()" class="danger">Zerar</button>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <div class="tab active" onclick="showPanel('command', this)">Painel IA</div>
+      <div class="tab" onclick="showPanel('diagnostic', this)">Diagnóstico</div>
+      <div class="tab" onclick="showPanel('portfolio', this)">Carteira</div>
+      <div class="tab" onclick="showPanel('movements', this)">Movimentações</div>
+      <div class="tab" onclick="showPanel('income', this)">Proventos</div>
+      <div class="tab" onclick="showPanel('events', this)">Eventos</div>
+      <div class="tab" onclick="showPanel('memory', this)">Memória</div>
+      <div class="tab" onclick="showPanel('jsons', this)">JSONs</div>
+    </nav>
+
+    <section id="command" class="active">
+      <div class="hero">
+        <div class="quote">Dados oficiais entram. A IA interpreta. O painel responde.</div>
+        <p>
+          O fluxo principal é direto: uma caixa para importar arquivos financeiros, uma caixa de conversa com IA
+          e uma caixa de resultados vivos onde aparecem gráficos, índices, alertas e respostas conforme a pergunta do usuário.
+        </p>
+      </div>
+
+      <div class="grid cols4" style="margin-top:14px">
+        <div class="card metric">
+          <div class="label">Arquivos carregados</div>
+          <div class="value" id="cFiles">0</div>
+          <div class="note">XLSX, CSV, PDF ou JSON.</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Ativos detectados</div>
+          <div class="value" id="cAssets">0</div>
+          <div class="note">Carteira consolidada.</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Contexto IA</div>
+          <div class="value" id="cContext">0%</div>
+          <div class="note">Quanto o sistema já sabe para responder.</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Backend Google</div>
+          <div class="value" id="cBackend">—</div>
+          <div class="note">Apps Script / Memória Patrimonial.</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h2>1. Entrada de dados</h2>
+        <div class="dropzone" id="dropzone">
+          <div>
+            <div class="big">Solte aqui seus arquivos financeiros</div>
+            <p>
+              Prioridade: Movimentação B3, Posição B3, Calendário de Eventos e Relatório Meus Produtos.
+              A arquitetura também aceita CSV, PDF, JSON de backup e futuros extratos de corretora.
+            </p>
+            <label class="btn primary">
+              Selecionar arquivos
+              <input id="fileInput2" type="file" accept=".xlsx,.xls,.csv,.pdf,.json" multiple style="display:none" />
+            </label>
+          </div>
+        </div>
+        <div id="importList" class="file-list" style="margin-top:12px"></div>
+      </div>
+
+      <div class="ai-shell">
+        <div class="card">
+          <h2>2. Caixa direta com IA</h2>
+          <p class="muted">
+            Pergunte em linguagem natural: renda, concentração, próximos aportes, ativos sem tese, eventos futuros,
+            riscos ou parecer patrimonial.
+          </p>
+
+          <label style="max-width:180px;margin-bottom:10px">
+            PIN
+            <input id="backendPin" type="password" value="2026" />
+          </label>
+
+          <div id="chatHistory" class="chat-history"></div>
+
+          <div class="quick-prompts">
+            <button onclick="askPreset('Faça um diagnóstico inicial da minha carteira com base nos arquivos importados.')">Diagnóstico inicial</button>
+            <button onclick="askPreset('Quais são meus maiores riscos de concentração?')">Concentração</button>
+            <button onclick="askPreset('Quais ativos mais geraram renda recebida?')">Renda real</button>
+            <button onclick="askPreset('Quais ativos precisam de tese patrimonial?')">Ativos sem tese</button>
+            <button onclick="askPreset('Gere um parecer patrimonial técnico do mês.')">Parecer mensal</button>
+          </div>
+
+          <label>
+            Mensagem para IA
+            <textarea id="aiQuestion" placeholder="Ex.: Analise minha carteira, destaque riscos, ativos sem tese, maiores pagadores e o que devo revisar antes do próximo aporte."></textarea>
+          </label>
+
+          <div class="actions" style="justify-content:flex-start;margin-top:10px">
+            <button class="primary" onclick="handleAiQuestion()">Perguntar à IA</button>
+            <button onclick="saveMemoryToBackend()">Salvar memória</button>
+            <button onclick="copyPrompt()">Copiar contexto</button>
+          </div>
+
+          <div id="backendStatus" class="backend-status">
+            Backend configurado. Clique em “Testar Backend” para confirmar conexão com o Google Apps Script.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>3. Resultados vivos</h2>
+          <p class="muted">
+            Gráficos, índices e respostas aparecem conforme os dados importados e as perguntas feitas.
+          </p>
+          <div id="dynamicResults" class="dynamic-results"></div>
+        </div>
+      </div>
+
+      <div class="grid cols2" style="margin-top:14px">
+        <div class="card">
+          <h2>Base estruturada invisível ao usuário</h2>
+          <div id="typeSummary"></div>
+          <div class="alert purple">
+            <strong>Estratégia:</strong> a interface é limpa, mas por trás o app monta JSONs canônicos:
+            posições, movimentações, proventos, eventos, performance, memória e pacote IA.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Pacote IA em tempo real</h2>
+          <pre class="jsonbox" id="aiBundleBox">{}</pre>
+        </div>
+      </div>
+    </section>
+
+    <section id="diagnostic">
+      <div class="grid cols4">
+        <div class="card metric">
+          <div class="label">Valor detectado</div>
+          <div class="value" id="dValue">R$ 0,00</div>
+          <div class="note">Soma das posições.</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Movimentações</div>
+          <div class="value" id="dMovs">0</div>
+          <div class="note">Ledger normalizado.</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Eventos futuros</div>
+          <div class="value" id="dEvents">0</div>
+          <div class="note">Calendário detectado.</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Instituições</div>
+          <div class="value" id="dBrokers">0</div>
+          <div class="note">Corretoras/custodiantes.</div>
+        </div>
+      </div>
+
+      <div class="grid cols2" style="margin-top:14px">
+        <div class="card">
+          <h2>Leitura heurística</h2>
+          <div id="heuristicList"></div>
+        </div>
+
+        <div class="card">
+          <h2>Concentração por classe</h2>
+          <div id="classBreakdown"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="portfolio">
+      <div class="toolbar">
+        <label>
+          Buscar ativo
+          <input id="assetSearch" placeholder="Ticker, produto, instituição..." oninput="renderPortfolio()" />
+        </label>
+        <button onclick="openThesisDialog()" class="blue">+ Tese manual</button>
+      </div>
+
+      <div class="split">
+        <div class="card">
+          <h2>Resumo da carteira</h2>
+          <div id="portfolioSummary"></div>
+        </div>
+
+        <div class="grid cols3" id="assetCards"></div>
+      </div>
+    </section>
+
+    <section id="movements">
+      <div class="toolbar">
+        <label>
+          Buscar
+          <input id="movSearch" placeholder="Ticker, evento, instituição..." oninput="renderMovements()" />
+        </label>
+
+        <label>
+          Natureza
+          <select id="movNature" onchange="renderMovements()">
+            <option value="all">Todas</option>
+            <option value="provento_recebido">Provento recebido</option>
+            <option value="compra_venda_liquidacao">Compra/venda/liquidação</option>
+            <option value="transferencia">Transferência</option>
+            <option value="outro">Outro</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="card">
+        <h2>Livro razão normalizado</h2>
+        <div class="table-wrap">
+          <table id="movTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <section id="income">
+      <div class="grid cols4">
+        <div class="card metric">
+          <div class="label">Total recebido</div>
+          <div class="value" id="iTotal">R$ 0,00</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Ativos pagadores</div>
+          <div class="value" id="iAssets">0</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Maior pagador</div>
+          <div class="value" id="iTop">—</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Eventos de renda</div>
+          <div class="value" id="iCount">0</div>
+        </div>
+      </div>
+
+      <div class="grid cols2" style="margin-top:14px">
+        <div class="card">
+          <h2>Ranking por renda recebida</h2>
+          <div id="incomeRanking"></div>
+        </div>
+
+        <div class="card">
+          <h2>Ledger de renda</h2>
+          <div class="table-wrap">
+            <table id="incomeTable"></table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="events">
+      <div class="toolbar">
+        <label>
+          Filtro
+          <select id="eventFilter" onchange="renderEvents()">
+            <option value="all">Todos</option>
+            <option value="inPortfolio">Na carteira</option>
+            <option value="outside">Fora da carteira</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="grid cols3">
+        <div class="card metric">
+          <div class="label">Eventos</div>
+          <div class="value" id="eCount">0</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Na carteira</div>
+          <div class="value" id="eIn">0</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Fora da carteira</div>
+          <div class="value" id="eOut">0</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <h2>Calendário de eventos/proventos</h2>
+        <div class="table-wrap">
+          <table id="eventsTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <section id="memory">
+      <div class="grid cols3">
+        <div class="card metric">
+          <div class="label">Teses registradas</div>
+          <div class="value" id="memTheses">0</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Ativos sem tese</div>
+          <div class="value" id="memMissing">0</div>
+        </div>
+
+        <div class="card metric">
+          <div class="label">Pendências</div>
+          <div class="value" id="memTasks">0</div>
+        </div>
+      </div>
+
+      <div class="grid cols2" style="margin-top:14px">
+        <div class="card">
+          <h2>Pendências de tese</h2>
+          <div id="memoryTasks"></div>
+        </div>
+
+        <div class="card">
+          <h2>Teses registradas</h2>
+          <div id="thesisList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="jsons">
+      <div class="toolbar">
+        <label>
+          JSON
+          <select id="jsonSelect" onchange="renderJsonBox()">
+            <option value="imports">imports.json</option>
+            <option value="assetMaster">asset_master.json</option>
+            <option value="positions">positions_snapshot.json</option>
+            <option value="movements">movement_ledger.json</option>
+            <option value="income">income_ledger.json</option>
+            <option value="events">event_calendar.json</option>
+            <option value="performance">performance_snapshot.json</option>
+            <option value="memory">memory_patrimonial.json</option>
+            <option value="aiBundle">ai_context_bundle.json</option>
+          </select>
+        </label>
+
+        <button onclick="copyJson()">Copiar JSON</button>
+      </div>
+
+      <pre class="jsonbox" id="jsonBox">{}</pre>
+    </section>
+
+    <div class="footer-note">
+      Versão com backend Google Apps Script conectado. O app roda no navegador, lê arquivos localmente,
+      monta JSONs patrimoniais e envia perguntas/pacotes ao Google Apps Script para memória e resposta IA.
+    </div>
+  </div>
+
+  <dialog id="thesisDialog">
+    <form method="dialog" onsubmit="event.preventDefault(); saveThesis();">
+      <h2>Registrar tese patrimonial</h2>
+
+      <div class="form-grid">
+        <label>
+          Ticker
+          <input id="thTicker" placeholder="AIEC11, HGLG11, BBAS3..." />
+        </label>
+
+        <label>
+          Função na carteira
+          <select id="thFunction">
+            <option>Núcleo de renda</option>
+            <option>Renda oportunística</option>
+            <option>Defensivo</option>
+            <option>Crescimento</option>
+            <option>Caixa</option>
+            <option>Especulativo</option>
+            <option>Em observação</option>
+            <option>Em saída</option>
+          </select>
+        </label>
+
+        <label>
+          Status da tese
+          <select id="thStatus">
+            <option value="forte">Forte</option>
+            <option value="neutra">Neutra</option>
+            <option value="fraca">Fraca</option>
+            <option value="vencida">Vencida</option>
+            <option value="nao_definida">Não definida</option>
+          </select>
+        </label>
+
+        <label class="full">
+          Tese atual
+          <textarea id="thText" placeholder="Por que este ativo existe na carteira?"></textarea>
+        </label>
+
+        <label class="full">
+          Riscos principais
+          <textarea id="thRisks" placeholder="Risco de crédito, vacância, gestão, concentração, preço médio, liquidez..."></textarea>
+        </label>
+
+        <label>
+          Alocação alvo %
+          <input id="thTarget" type="number" step="0.01" />
+        </label>
+
+        <label>
+          Prazo de revisão
+          <input id="thReview" type="date" />
+        </label>
+
+        <label>
+          Convicção 0-10
+          <input id="thConviction" type="number" min="0" max="10" step="1" value="5" />
+        </label>
+      </div>
+
+      <div class="actions" style="justify-content:flex-start;margin-top:14px">
+        <button class="primary" type="submit">Salvar tese</button>
+        <button type="button" onclick="thesisDialog.close()">Cancelar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzWx8kThrG0L-VAhC-W-RP7Q7KpcYwEEi1_dNM0p6i3859AbAL5Kv_gx6XMaXiRpevJ/exec";
+    const LS = "guido_wealth_intelligence_v03_backend";
+    const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+    let state = loadState();
+
+    function initialState() {
+      return {
+        imports: [],
+        rawSheets: [],
+        assetMaster: { ativos: {} },
+        positions: { dataBase: null, posicoes: [] },
+        movements: { movimentacoes: [] },
+        income: { proventosRecebidos: [] },
+        events: { eventosFuturos: [] },
+        performance: { categorias: [], produtos: [] },
+        memory: {
+          ativos: {},
+          decisoes: [],
+          alertas: [],
+          pendencias: [],
+          heuristicas: defaultHeuristics()
+        },
+        aiBundle: {},
+        chat: [],
+        backend: {
+          ok: false,
+          docUrl: null,
+          lastPing: null
+        }
+      };
+    }
+
+    function defaultHeuristics() {
+      return [
+        {
+          nome: "Não comprar apenas por dividend yield alto",
+          descricao: "Yield elevado sem recorrência ou com risco patrimonial deve gerar alerta, não compra automática."
+        },
+        {
+          nome: "Ativo relevante precisa de tese",
+          descricao: "Toda posição relevante deve ter função, risco, gatilho e prazo de revisão."
+        },
+        {
+          nome: "Renda não é retorno total",
+          descricao: "Provento recebido deve ser confrontado com valorização/desvalorização patrimonial."
+        },
+        {
+          nome: "Concentração exige justificativa",
+          descricao: "Posições grandes sem tese ou com tese fraca geram prioridade de revisão."
+        }
+      ];
+    }
+
+    function loadState() {
+      try {
+        return JSON.parse(localStorage.getItem(LS)) || initialState();
+      } catch (e) {
+        return initialState();
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(LS, JSON.stringify(state));
+      renderAll();
+    }
+
+    function money(value) {
+      return BRL.format(Number(value || 0));
+    }
+
+    function num(value) {
+      if (value === null || value === undefined || value === "") return 0;
+      if (typeof value === "number") return value;
+
+      let s = String(value)
+        .trim()
+        .replace(/R\$\s?/g, "")
+        .replace(/\./g, "")
+        .replace(",", ".")
+        .replace("%", "");
+
+      let n = Number(s);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function dateStr(value) {
+      if (!value) return null;
+
+      if (value instanceof Date && !isNaN(value)) {
+        return value.toISOString().slice(0, 10);
+      }
+
+      if (typeof value === "number") {
+        const d = XLSX.SSF.parse_date_code(value);
+        if (d) {
+          return `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
+        }
+      }
+
+      let s = String(value).trim();
+      let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+
+      if (m) {
+        return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+      }
+
+      let d = new Date(s);
+      return isNaN(d) ? s : d.toISOString().slice(0, 10);
+    }
+
+    function safe(value) {
+      return String(value ?? "").replace(/[&<>"']/g, function(m) {
+        return {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;"
+        }[m];
+      });
+    }
+
+    function uid() {
+      return Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function showLoading(title, text) {
+      loading.classList.add("active");
+      loadingTitle.textContent = title;
+      loadingText.textContent = text || "";
+    }
+
+    function hideLoading() {
+      loading.classList.remove("active");
+    }
+
+    function showPanel(id, el) {
+      document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      if (el) el.classList.add("active");
+
+      renderAll();
+    }
+
+    fileInput.addEventListener("change", e => handleFiles(e.target.files));
+    fileInput2.addEventListener("change", e => handleFiles(e.target.files));
+
+    ["dragenter", "dragover"].forEach(evt => {
+      dropzone.addEventListener(evt, e => {
+        e.preventDefault();
+        dropzone.classList.add("drag");
+      });
+    });
+
+    ["dragleave", "drop"].forEach(evt => {
+      dropzone.addEventListener(evt, e => {
+        e.preventDefault();
+        dropzone.classList.remove("drag");
+      });
+    });
+
+    dropzone.addEventListener("drop", e => {
+      handleFiles(e.dataTransfer.files);
+    });
+
+    async function handleFiles(fileList) {
+      const files = [...fileList];
+      if (!files.length) return;
+
+      showLoading("Processando arquivos...", `${files.length} arquivo(s) recebido(s).`);
+
+      try {
+        for (const file of files) {
+          await parseFile(file);
+        }
+
+        rebuildCanonicalData();
+        saveState();
+
+      } catch (err) {
+        alert("Erro ao processar: " + err.message);
+        console.error(err);
+      } finally {
+        hideLoading();
+      }
+    }
+
+    async function parseFile(file) {
+      const ext = file.name.split(".").pop().toLowerCase();
+
+      if (ext === "json") {
+        const text = await file.text();
+        state = JSON.parse(text);
+        return;
+      }
+
+      if (ext === "pdf") {
+        state.imports.push({
+          id: uid(),
+          fileName: file.name,
+          fileSize: file.size,
+          importedAt: new Date().toISOString(),
+          type: "pdf_recebido",
+          confidence: 0.5,
+          reason: "PDF armazenado para futura extração por IA/OCR",
+          sheetNames: [],
+          rowCount: 0
+        });
+        return;
+      }
+
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array", cellDates: true });
+
+      const sheets = [];
+
+      wb.SheetNames.forEach(name => {
+        const ws = wb.Sheets[name];
+        const rows = XLSX.utils.sheet_to_json(ws, {
+          header: 1,
+          defval: null,
+          raw: false
+        });
+
+        const objects = sheetToObjects(rows);
+
+        sheets.push({
+          name,
+          rows: rows.length,
+          headers: objects.headers,
+          objects: objects.rows
+        });
+      });
+
+      const detected = detectWorkbookType(wb.SheetNames, sheets);
+
+      const imp = {
+        id: uid(),
+        fileName: file.name,
+        fileSize: file.size,
+        importedAt: new Date().toISOString(),
+        type: detected.type,
+        confidence: detected.confidence,
+        reason: detected.reason,
+        sheetNames: wb.SheetNames,
+        rowCount: sheets.reduce((s, x) => s + x.rows, 0)
+      };
+
+      state.imports.push(imp);
+      state.rawSheets.push({
+        importId: imp.id,
+        fileName: file.name,
+        type: detected.type,
+        sheets
+      });
+    }
+
+    function sheetToObjects(rows) {
+      let headerIndex = 0;
+      let bestScore = -1;
+
+      const keywords = [
+        "entrada", "saída", "saida", "data", "movimentação", "movimentacao",
+        "produto", "instituição", "instituicao", "quantidade", "preço", "preco",
+        "valor", "código", "codigo", "negociação", "negociacao", "data com",
+        "pagamento", "dy", "categoria", "saldo"
+      ];
+
+      rows.slice(0, 15).forEach((r, i) => {
+        const txt = r.map(x => String(x || "").toLowerCase()).join(" | ");
+        const score = keywords.reduce((s, k) => s + (txt.includes(k) ? 1 : 0), 0);
+
+        if (score > bestScore) {
+          bestScore = score;
+          headerIndex = i;
+        }
+      });
+
+      const headers = (rows[headerIndex] || []).map(h => cleanHeader(h));
+      const data = [];
+
+      for (let i = headerIndex + 1; i < rows.length; i++) {
+        const r = rows[i];
+
+        if (!r || r.every(c => c === null || c === "")) continue;
+
+        const obj = {};
+
+        headers.forEach((h, idx) => {
+          if (h) obj[h] = r[idx];
+        });
+
+        if (Object.keys(obj).length) data.push(obj);
+      }
+
+      return { headers, rows: data };
+    }
+
+    function cleanHeader(h) {
+      return String(h || "").trim().replace(/\s+/g, " ");
+    }
+
+    function normKey(k) {
+      return String(k || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_|_$/g, "");
+    }
+
+    function getVal(obj, candidates) {
+      const map = {};
+
+      Object.keys(obj || {}).forEach(k => {
+        map[normKey(k)] = obj[k];
+      });
+
+      for (const c of candidates) {
+        const v = map[normKey(c)];
+
+        if (v !== undefined && v !== null && v !== "") {
+          return v;
+        }
+      }
+
+      return null;
+    }
+
+    function detectWorkbookType(sheetNames, sheets) {
+      const allHeaders = sheets.flatMap(s => s.headers).map(normKey).join(" ");
+      const names = sheetNames.map(normKey).join(" ");
+
+      if (
+        allHeaders.includes("entrada_saida") &&
+        allHeaders.includes("movimentacao") &&
+        allHeaders.includes("valor_da_operacao")
+      ) {
+        return {
+          type: "movimentacao_b3",
+          confidence: 0.97,
+          reason: "Cabeçalhos de movimentação encontrados"
+        };
+      }
+
+      if (
+        allHeaders.includes("data_com") &&
+        allHeaders.includes("data_de_pagamento") &&
+        allHeaders.includes("dy")
+      ) {
+        return {
+          type: "calendario_eventos_b3",
+          confidence: 0.95,
+          reason: "Cabeçalhos de proventos/eventos encontrados"
+        };
+      }
+
+      if (
+        allHeaders.includes("rend_abril") ||
+        allHeaders.includes("saldo_investido") ||
+        allHeaders.includes("rent_ult_12_m")
+      ) {
+        return {
+          type: "relatorio_meus_produtos_b3",
+          confidence: 0.90,
+          reason: "Cabeçalhos de rentabilidade/saldo encontrados"
+        };
+      }
+
+      if (
+        names.includes("acoes") ||
+        names.includes("bdr") ||
+        names.includes("tesouro_direto") ||
+        allHeaders.includes("codigo_de_negociacao") ||
+        allHeaders.includes("valor_atualizado")
+      ) {
+        return {
+          type: "posicao_b3",
+          confidence: 0.92,
+          reason: "Abas/cabeçalhos de posição encontrados"
+        };
+      }
+
+      return {
+        type: "desconhecido",
+        confidence: 0.20,
+        reason: "Não foi possível reconhecer com segurança"
+      };
+    }
+
+    function rebuildCanonicalData() {
+      state.assetMaster = { ativos: {} };
+      state.positions = { dataBase: new Date().toISOString().slice(0, 10), posicoes: [] };
+      state.movements = { movimentacoes: [] };
+      state.income = { proventosRecebidos: [] };
+      state.events = { eventosFuturos: [] };
+      state.performance = { categorias: [], produtos: [] };
+
+      state.rawSheets.forEach(pkg => {
+        if (pkg.type === "movimentacao_b3") parseMovements(pkg);
+        if (pkg.type === "posicao_b3") parsePositions(pkg);
+        if (pkg.type === "calendario_eventos_b3") parseEvents(pkg);
+        if (pkg.type === "relatorio_meus_produtos_b3") parsePerformance(pkg);
+      });
+
+      consolidateAssets();
+      buildMemoryTasks();
+      buildAiBundle();
+    }
+
+    function inferTicker(product) {
+      const s = String(product || "").trim();
+
+      let m = s.match(/\b[A-Z]{4}\d{1,2}[A-Z]?\b/);
+      if (m) return m[0];
+
+      m = s.match(/\b[A-Z]{1,5}\d{2}\b/);
+      if (m) return m[0];
+
+      m = s.match(/^([A-Z0-9]{4,8})\s+-/);
+      if (m) return m[1];
+
+      return s.split(" ")[0] || "SEM_TICKER";
+    }
+
+    function inferClass(ticker, product = "", sheetName = "") {
+      const t = String(ticker || "").toUpperCase();
+      const p = String(product || "").toUpperCase();
+      const sh = String(sheetName || "").toUpperCase();
+
+      if (sh.includes("BDR") || t.endsWith("34")) return "BDR";
+      if (sh.includes("ETF") || p.includes(" ETF")) return "ETF";
+      if (sh.includes("TESOURO")) return "Tesouro Direto";
+      if (sh.includes("RENDA FIXA") || p.includes("CDB") || p.includes("LCI") || p.includes("LCA")) return "Renda Fixa";
+      if (sh.includes("FUNDO") || p.includes("FII") || /11$/.test(t)) return "FII";
+      if (sh.includes("AÇÕES") || sh.includes("ACOES") || /[3456]$/.test(t)) return "Ação";
+
+      return "Outro";
+    }
+
+    function addAsset(ticker, data = {}) {
+      if (!ticker) return;
+
+      const key = String(ticker).toUpperCase();
+
+      if (!state.assetMaster.ativos[key]) {
+        state.assetMaster.ativos[key] = {
+          ticker: key,
+          nome: data.nome || data.produto || key,
+          classe: data.classe || "Outro",
+          instituicoes: [],
+          fontes: []
+        };
+      }
+
+      const a = state.assetMaster.ativos[key];
+
+      if (data.nome && !a.nome) a.nome = data.nome;
+      if (data.classe && a.classe === "Outro") a.classe = data.classe;
+      if (data.instituicao && !a.instituicoes.includes(data.instituicao)) a.instituicoes.push(data.instituicao);
+      if (data.fonte && !a.fontes.includes(data.fonte)) a.fontes.push(data.fonte);
+    }
+
+    function parseMovements(pkg) {
+      pkg.sheets.forEach(sh => {
+        sh.objects.forEach(row => {
+          const produto = getVal(row, ["Produto", "Produto / Ativo", "Ativo"]);
+          const ticker = inferTicker(produto);
+          const inst = getVal(row, ["Instituição", "Instituicao", "Custodiante"]);
+          const mov = String(getVal(row, ["Movimentação", "Movimentacao", "Tipo de movimentação"]) || "");
+          const direction = String(getVal(row, ["Entrada/Saída", "Entrada/Saida"]) || "");
+          const q = num(getVal(row, ["Quantidade"]));
+          const unit = num(getVal(row, ["Preço unitário", "Preco unitario", "Preço Unitário"]));
+          const val = num(getVal(row, ["Valor da Operação", "Valor da Operacao", "Valor"]));
+          const data = dateStr(getVal(row, ["Data", "Data do Negócio", "Data do negocio"]));
+          const natureza = classifyMovement(mov);
+
+          const item = {
+            id: uid(),
+            data,
+            ticker,
+            produto,
+            classe: inferClass(ticker, produto, sh.name),
+            direcao: direction,
+            movimentacao: mov,
+            naturezaSistema: natureza,
+            instituicao: inst,
+            quantidade: q,
+            valorUnitario: unit,
+            valorTotal: val,
+            fonteArquivo: pkg.fileName
+          };
+
+          state.movements.movimentacoes.push(item);
+
+          addAsset(ticker, {
+            produto,
+            nome: produto,
+            classe: item.classe,
+            instituicao: inst,
+            fonte: "movimentacao_b3"
+          });
+
+          if (natureza === "provento_recebido") {
+            state.income.proventosRecebidos.push({
+              id: item.id,
+              dataPagamento: data,
+              ticker,
+              produto,
+              tipo: mov,
+              quantidade: q,
+              valorUnitario: unit,
+              valorTotal: val,
+              instituicao: inst,
+              fonte: "movimentacao_b3"
+            });
+          }
+        });
+      });
+    }
+
+    function classifyMovement(mov) {
+      const s = String(mov || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      if (
+        s.includes("rendimento") ||
+        s.includes("dividendo") ||
+        s.includes("juros sobre capital") ||
+        s.includes("juro sobre capital") ||
+        s.includes("pagamento de juros")
+      ) {
+        return "provento_recebido";
+      }
+
+      if (s.includes("transferencia") || s.includes("atualizacao")) return "transferencia";
+
+      if (
+        s.includes("liquidacao") ||
+        s.includes("compra") ||
+        s.includes("venda") ||
+        s.includes("negociacao")
+      ) {
+        return "compra_venda_liquidacao";
+      }
+
+      return "outro";
+    }
+
+    function parsePositions(pkg) {
+      pkg.sheets.forEach(sh => {
+        sh.objects.forEach(row => {
+          const produto = getVal(row, ["Produto", "Nome do Produto", "Ativo"]);
+          const ticker = String(getVal(row, ["Código de Negociação", "Codigo de Negociacao", "Código", "Codigo", "Ticker"]) || inferTicker(produto)).toUpperCase();
+          const inst = getVal(row, ["Instituição", "Instituicao", "Custodiante"]);
+          const qtd = num(getVal(row, ["Quantidade", "Qtd"]));
+          const disp = num(getVal(row, ["Quantidade Disponível", "Quantidade Disponivel", "Qtd Disponível", "Disponível"]));
+          const price = num(getVal(row, ["Preço de Fechamento", "Preco de Fechamento", "Preço unitário", "Preco unitario"]));
+          const value = num(getVal(row, ["Valor Atualizado", "Valor bruto", "Valor Líquido", "Valor Liquido", "Saldo Investido", "Valor"]));
+
+          if (!ticker || (!qtd && !value && !produto)) return;
+
+          const classe = inferClass(ticker, produto, sh.name);
+
+          const pos = {
+            id: uid(),
+            ticker,
+            produto,
+            classe,
+            instituicao: inst,
+            quantidade: qtd,
+            quantidadeDisponivel: disp,
+            precoFechamento: price,
+            valorAtualizado: value || qtd * price,
+            fonteArquivo: pkg.fileName,
+            aba: sh.name
+          };
+
+          state.positions.posicoes.push(pos);
+
+          addAsset(ticker, {
+            produto,
+            nome: produto,
+            classe,
+            instituicao: inst,
+            fonte: "posicao_b3"
+          });
+        });
+      });
+    }
+
+    function parseEvents(pkg) {
+      pkg.sheets.forEach(sh => {
+        sh.objects.forEach(row => {
+          const produto = getVal(row, ["Produto", "Ativo"]);
+          const ticker = inferTicker(produto);
+          const evento = getVal(row, ["Tipo de Evento", "Tipo", "Evento"]);
+          const dataCom = dateStr(getVal(row, ["Data COM", "Data Com"]));
+          const dataPagamento = dateStr(getVal(row, ["Data de Pagamento", "Pagamento"]));
+          const valorUnitario = num(getVal(row, ["Preço Unitário Bruto", "Preco Unitario Bruto", "Valor Unitário", "Valor Unitario"]));
+          const precoFechamento = num(getVal(row, ["Preço Fechamento", "Preco Fechamento"]));
+          const dy = num(getVal(row, ["DY", "Dividend Yield"]));
+          const minha = String(getVal(row, ["Minha Carteira", "Está na carteira", "Esta na carteira"]) || "").toLowerCase();
+          const url = getVal(row, ["Url Fato Relevante", "URL", "Link"]);
+
+          if (!ticker || !evento) return;
+
+          const ev = {
+            id: uid(),
+            ticker,
+            produto,
+            classe: inferClass(ticker, produto, sh.name),
+            evento,
+            dataCom,
+            dataPagamento,
+            valorUnitarioBruto: valorUnitario,
+            precoFechamento,
+            dyEvento: dy,
+            estaNaCarteira: minha.includes("sim") || minha.includes("true") || minha === "1",
+            urlFatoRelevante: url,
+            fonteArquivo: pkg.fileName
+          };
+
+          state.events.eventosFuturos.push(ev);
+
+          addAsset(ticker, {
+            produto,
+            nome: produto,
+            classe: ev.classe,
+            fonte: "calendario_eventos_b3"
+          });
+        });
+      });
+    }
+
+    function parsePerformance(pkg) {
+      pkg.sheets.forEach(sh => {
+        sh.objects.forEach(row => {
+          const produto = getVal(row, ["Produto", "Ativo"]);
+          const categoria = getVal(row, ["Categoria"]);
+          const saldo = num(getVal(row, ["Saldo Investido (R$)", "Saldo Investido", "Valor Investido"]));
+          const rendMes = num(getVal(row, ["Rend. Abril (R$)", "Rend. Maio (R$)", "Rend. Mês (R$)", "Rendimento mês"]));
+          const rentMes = num(getVal(row, ["Rent. Abril (%)", "Rent. Maio (%)", "Rent. Mês (%)"]));
+          const rend12 = num(getVal(row, ["Rend. Últ. 12 m (R$)", "Rend. Ult. 12 m (R$)", "Rend. Últ. 12 meses (R$)"]));
+          const rent12 = num(getVal(row, ["Rent. Últ. 12 m (%)", "Rent. Ult. 12 m (%)"]));
+          const rendAno = num(getVal(row, ["Rend. 2026 (R$)", "Rend. Ano (R$)"]));
+          const rentAno = num(getVal(row, ["Rent. 2026 (%)", "Rent. Ano (%)"]));
+
+          if (produto) {
+            const ticker = inferTicker(produto);
+
+            const p = {
+              id: uid(),
+              ticker,
+              produto,
+              categoria,
+              rendimentoMes: rendMes,
+              rentabilidadeMes: rentMes,
+              rendimento12m: rend12,
+              rentabilidade12m: rent12,
+              rendimentoAno: rendAno,
+              rentabilidadeAno: rentAno,
+              saldoInvestido: saldo,
+              fonteArquivo: pkg.fileName
+            };
+
+            state.performance.produtos.push(p);
+
+            addAsset(ticker, {
+              produto,
+              nome: produto,
+              classe: categoria || inferClass(ticker, produto, sh.name),
+              fonte: "relatorio_meus_produtos_b3"
+            });
+          } else if (categoria) {
+            state.performance.categorias.push({
+              id: uid(),
+              categoria,
+              rendimentoMes: rendMes,
+              rentabilidadeMes: rentMes,
+              rendimento12m: rend12,
+              rentabilidade12m: rent12,
+              rendimentoAno: rendAno,
+              rentabilidadeAno: rentAno,
+              saldoInvestido: saldo,
+              fonteArquivo: pkg.fileName
+            });
+          }
+        });
+      });
+    }
+
+    function consolidateAssets() {
+      const total = state.positions.posicoes.reduce((s, p) => s + Number(p.valorAtualizado || 0), 0);
+
+      state.positions.posicoes.forEach(p => {
+        p.percentualCarteira = total ? Number(p.valorAtualizado || 0) / total * 100 : 0;
+      });
+    }
+
+    function groupSum(arr, key, val) {
+      const out = {};
+
+      arr.forEach(x => {
+        const k = x[key] || "Não classificado";
+        out[k] = (out[k] || 0) + Number(x[val] || 0);
+      });
+
+      return out;
+    }
+
+    function buildMemoryTasks() {
+      const positionsByTicker = groupSum(state.positions.posicoes, "ticker", "valorAtualizado");
+      const sorted = Object.entries(positionsByTicker).sort((a, b) => b[1] - a[1]);
+      const existing = state.memory.ativos || {};
+
+      state.memory.pendencias = sorted
+        .filter(([ticker]) => !existing[ticker])
+        .slice(0, 30)
+        .map(([ticker, value]) => ({
+          id: "tese_" + ticker,
+          tipo: "definir_tese",
+          ticker,
+          prioridade: value > 50000 ? "alta" : "media",
+          valorAtualizado: value,
+          motivo: "posição detectada sem tese patrimonial registrada"
+        }));
+    }
+
+    function groupBrokers() {
+      const map = {};
+
+      [...state.positions.posicoes, ...state.movements.movimentacoes].forEach(x => {
+        if (!x.ticker || !x.instituicao) return;
+
+        map[x.ticker] = map[x.ticker] || [];
+
+        if (!map[x.ticker].includes(x.instituicao)) {
+          map[x.ticker].push(x.instituicao);
+        }
+      });
+
+      return map;
+    }
+
+    function buildHeuristicAlerts() {
+      const alerts = [];
+      const positions = state.positions.posicoes;
+      const total = positions.reduce((s, p) => s + Number(p.valorAtualizado || 0), 0);
+
+      positions.forEach(p => {
+        if (total && p.valorAtualizado / total > 0.15) {
+          alerts.push({
+            tipo: "concentracao_relevante",
+            ticker: p.ticker,
+            classe: p.classe,
+            valor: p.valorAtualizado,
+            percentual: p.valorAtualizado / total * 100,
+            mensagem: "posição acima de 15% da carteira; exige tese explícita"
+          });
+        }
+
+        if (!state.memory.ativos[p.ticker]) {
+          alerts.push({
+            tipo: "ativo_sem_tese",
+            ticker: p.ticker,
+            valor: p.valorAtualizado,
+            mensagem: "ativo em posição atual sem tese registrada"
+          });
+        }
+      });
+
+      Object.entries(groupBrokers()).forEach(([ticker, insts]) => {
+        if (insts.length > 1) {
+          alerts.push({
+            tipo: "ativo_em_multiplas_corretoras",
+            ticker,
+            instituicoes: insts,
+            mensagem: "posição/eventos detectados em mais de uma instituição"
+          });
+        }
+      });
+
+      state.events.eventosFuturos.forEach(e => {
+        if (e.estaNaCarteira) {
+          alerts.push({
+            tipo: "evento_futuro_na_carteira",
+            ticker: e.ticker,
+            dataPagamento: e.dataPagamento,
+            valorUnitario: e.valorUnitarioBruto,
+            mensagem: "incluir no fluxo previsto"
+          });
+        } else if (e.dyEvento >= 1) {
+          alerts.push({
+            tipo: "evento_atrativo_fora_da_carteira",
+            ticker: e.ticker,
+            dy: e.dyEvento,
+            mensagem: "não comprar automaticamente; analisar recorrência e fundamento"
+          });
+        }
+      });
+
+      return alerts.slice(0, 80);
+    }
+
+    function buildAiBundle() {
+      const positions = state.positions.posicoes;
+      const total = positions.reduce((s, p) => s + Number(p.valorAtualizado || 0), 0);
+      const top = [...positions].sort((a, b) => b.valorAtualizado - a.valorAtualizado).slice(0, 12);
+      const incomeByTicker = groupSum(state.income.proventosRecebidos, "ticker", "valorTotal");
+
+      const topIncome = Object.entries(incomeByTicker)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([ticker, valor]) => ({ ticker, valor }));
+
+      const classes = groupSum(positions, "classe", "valorAtualizado");
+      const alerts = buildHeuristicAlerts();
+
+      state.memory.alertas = alerts;
+
+      state.aiBundle = {
+        geradoEm: new Date().toISOString(),
+        resumoCarteira: {
+          valorTotal: total,
+          numeroAtivos: Object.keys(state.assetMaster.ativos).length,
+          classes,
+          maioresPosicoes: top.map(p => ({
+            ticker: p.ticker,
+            classe: p.classe,
+            valor: p.valorAtualizado,
+            percentual: p.percentualCarteira
+          })),
+          maioresPagadores: topIncome
+        },
+        eventosRelevantes: state.events.eventosFuturos.slice(0, 40),
+        proventosRecentes: state.income.proventosRecebidos.slice(-60),
+        movimentosRecentes: state.movements.movimentacoes.slice(-80),
+        alertasHeuristicos: alerts,
+        pendencias: state.memory.pendencias,
+        heuristicas: state.memory.heuristicas,
+        perguntasParaUsuario: [
+          "Qual é a função dos 10 maiores ativos na carteira?",
+          "Quais posições existem apenas por inércia?",
+          "Algum ativo está pagando renda mas destruindo capital?",
+          "O próximo aporte deve aumentar renda, reduzir risco ou criar caixa estratégico?"
+        ]
+      };
+    }
+
+    function renderAll() {
+      renderMetrics();
+      renderImport();
+      renderDiagnostic();
+      renderPortfolio();
+      renderMovements();
+      renderIncome();
+      renderEvents();
+      renderMemory();
+      renderJsonBox();
+      renderDynamicResults();
+      renderChat();
+      buildPrompt(false);
+    }
+
+    function contextScore() {
+      return Math.min(
+        100,
+        (state.imports.length * 18) +
+        (Object.keys(state.assetMaster.ativos).length ? 20 : 0) +
+        (state.income.proventosRecebidos.length ? 20 : 0) +
+        (state.events.eventosFuturos.length ? 12 : 0) +
+        (state.memory.pendencias.length ? 10 : 0)
+      );
+    }
+
+    function renderMetrics() {
+      cFiles.textContent = state.imports.length;
+      cAssets.textContent = Object.keys(state.assetMaster.ativos).length;
+      cContext.textContent = contextScore() + "%";
+      cBackend.textContent = state.backend && state.backend.ok ? "OK" : "—";
+
+      dValue.textContent = money(state.positions.posicoes.reduce((s, p) => s + Number(p.valorAtualizado || 0), 0));
+      dMovs.textContent = state.movements.movimentacoes.length;
+      dEvents.textContent = state.events.eventosFuturos.length;
+      dBrokers.textContent = new Set(
+        [...state.positions.posicoes, ...state.movements.movimentacoes]
+          .map(x => x.instituicao)
+          .filter(Boolean)
+      ).size;
+    }
+
+    function renderImport() {
+      importList.innerHTML = state.imports.length
+        ? state.imports.map(i => `
+          <div class="file-item">
+            <div>
+              <strong>${safe(i.fileName)}</strong>
+              <small>
+                ${safe(i.type)} • ${i.rowCount || 0} linhas • confiança ${((i.confidence || 0) * 100).toFixed(0)}%<br>
+                ${safe(i.reason)}
+              </small>
+            </div>
+            <span class="pill info">${safe(i.type)}</span>
+          </div>
+        `).join("")
+        : `<div class="alert info">Nenhum arquivo importado ainda.</div>`;
+
+      const counts = {};
+
+      state.imports.forEach(i => {
+        counts[i.type] = (counts[i.type] || 0) + 1;
+      });
+
+      typeSummary.innerHTML = Object.entries(counts)
+        .map(([k, v]) => `<div class="alert ok"><strong>${safe(k)}</strong>: ${v} arquivo(s)</div>`)
+        .join("") || `<div class="alert info">Aguardando importação.</div>`;
+    }
+
+    function renderDiagnostic() {
+      const alerts = state.memory.alertas || [];
+
+      heuristicList.innerHTML = alerts.length
+        ? alerts.slice(0, 20).map(a => `
+          <div class="alert ${a.tipo.includes("concentracao") ? "warn" : a.tipo.includes("sem_tese") ? "purple" : "info"}">
+            <strong>${safe(a.ticker || a.tipo)}</strong><br>
+            ${safe(a.mensagem || "")}
+            ${a.valor ? `<br><span class="muted small">Valor: ${money(a.valor)}</span>` : ""}
+          </div>
+        `).join("")
+        : `<div class="alert info">Sem alertas. Importe arquivos para gerar heurísticas.</div>`;
+
+      const classes = groupSum(state.positions.posicoes, "classe", "valorAtualizado");
+      const total = Object.values(classes).reduce((a, b) => a + b, 0);
+
+      classBreakdown.innerHTML = Object.entries(classes)
+        .sort((a, b) => b[1] - a[1])
+        .map(([c, v]) => `
+          <div class="alert info">
+            <strong>${safe(c)}</strong> — ${money(v)}
+            <span class="muted">(${total ? (v / total * 100).toFixed(1) : 0}%)</span>
+            <div class="bar-wrap" style="margin-top:8px">
+              <div class="bar" style="width:${total ? v / total * 100 : 0}%"></div>
+            </div>
+          </div>
+        `).join("") || `<div class="alert info">Sem posição detectada.</div>`;
+    }
+
+    function renderPortfolio() {
+      const q = (assetSearch?.value || "").toLowerCase();
+
+      const rows = state.positions.posicoes
+        .filter(p => [p.ticker, p.produto, p.instituicao, p.classe].join(" ").toLowerCase().includes(q))
+        .sort((a, b) => b.valorAtualizado - a.valorAtualizado);
+
+      portfolioSummary.innerHTML = `
+        <div class="alert info"><strong>Total de posições:</strong> ${rows.length}</div>
+        <div class="alert ok"><strong>Valor atualizado:</strong> ${money(rows.reduce((s, p) => s + Number(p.valorAtualizado || 0), 0))}</div>
+      `;
+
+      assetCards.innerHTML = rows.length
+        ? rows.slice(0, 90).map(p => `
+          <div class="asset-card">
+            <div class="asset-head">
+              <div>
+                <strong>${safe(p.ticker)}</strong>
+                <div class="muted small">${safe(p.classe)} • ${safe(p.instituicao || "")}</div>
+              </div>
+              <span class="pill ${state.memory.ativos[p.ticker] ? "ok" : "warn"}">
+                ${state.memory.ativos[p.ticker] ? "com tese" : "sem tese"}
+              </span>
+            </div>
+            <div>${safe(p.produto || "")}</div>
+            <div class="asset-value">${money(p.valorAtualizado)}</div>
+            <div class="muted small">Qtd: ${p.quantidade || 0} • ${p.percentualCarteira ? p.percentualCarteira.toFixed(2) : 0}% da carteira</div>
+            <button onclick="openThesisDialog('${safe(p.ticker)}')">Registrar tese</button>
+          </div>
+        `).join("")
+        : `<div class="alert info">Sem posições detectadas.</div>`;
+    }
+
+    function tableRows(rows, cols) {
+      return `
+        <thead>
+          <tr>${cols.map(c => `<th>${c.label}</th>`).join("")}</tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => `
+            <tr>${cols.map(c => `<td>${c.f ? c.f(r) : safe(r[c.key])}</td>`).join("")}</tr>
+          `).join("")}
+        </tbody>
+      `;
+    }
+
+    function renderMovements() {
+      const q = (movSearch?.value || "").toLowerCase();
+      const n = movNature?.value || "all";
+
+      let rows = state.movements.movimentacoes
+        .filter(x => (n === "all" || x.naturezaSistema === n) && [x.ticker, x.produto, x.movimentacao, x.instituicao].join(" ").toLowerCase().includes(q))
+        .sort((a, b) => String(b.data).localeCompare(String(a.data)));
+
+      movTable.innerHTML = tableRows(rows.slice(0, 1000), [
+        { label: "Data", key: "data" },
+        { label: "Ticker", key: "ticker" },
+        { label: "Movimentação", key: "movimentacao" },
+        { label: "Natureza", key: "naturezaSistema" },
+        { label: "Qtd", key: "quantidade" },
+        { label: "Valor", f: r => money(r.valorTotal) },
+        { label: "Instituição", key: "instituicao" }
+      ]);
+    }
+
+    function renderIncome() {
+      const rows = state.income.proventosRecebidos;
+      const total = rows.reduce((s, x) => s + Number(x.valorTotal || 0), 0);
+      const rank = Object.entries(groupSum(rows, "ticker", "valorTotal")).sort((a, b) => b[1] - a[1]);
+
+      iTotal.textContent = money(total);
+      iAssets.textContent = rank.length;
+      iTop.textContent = rank[0]?.[0] || "—";
+      iCount.textContent = rows.length;
+
+      incomeRanking.innerHTML = rank.slice(0, 25).map(([t, v], idx) => `
+        <div class="alert info">
+          <strong>${idx + 1}. ${safe(t)}</strong> — ${money(v)}
+          <div class="bar-wrap" style="margin-top:8px">
+            <div class="bar" style="width:${total ? v / total * 100 : 0}%"></div>
+          </div>
+        </div>
+      `).join("") || `<div class="alert info">Sem proventos detectados.</div>`;
+
+      incomeTable.innerHTML = tableRows(
+        [...rows].sort((a, b) => String(b.dataPagamento).localeCompare(String(a.dataPagamento))).slice(0, 700),
+        [
+          { label: "Pagamento", key: "dataPagamento" },
+          { label: "Ticker", key: "ticker" },
+          { label: "Tipo", key: "tipo" },
+          { label: "Qtd", key: "quantidade" },
+          { label: "Valor unit.", f: r => money(r.valorUnitario) },
+          { label: "Total", f: r => money(r.valorTotal) }
+        ]
+      );
+    }
+
+    function renderEvents() {
+      const f = eventFilter?.value || "all";
+
+      let rows = state.events.eventosFuturos.filter(e => {
+        if (f === "all") return true;
+        if (f === "inPortfolio") return e.estaNaCarteira;
+        return !e.estaNaCarteira;
+      });
+
+      eCount.textContent = state.events.eventosFuturos.length;
+      eIn.textContent = state.events.eventosFuturos.filter(e => e.estaNaCarteira).length;
+      eOut.textContent = state.events.eventosFuturos.filter(e => !e.estaNaCarteira).length;
+
+      eventsTable.innerHTML = tableRows(rows.slice(0, 1000), [
+        { label: "Ticker", key: "ticker" },
+        { label: "Evento", key: "evento" },
+        { label: "Data COM", key: "dataCom" },
+        { label: "Pagamento", key: "dataPagamento" },
+        { label: "Valor unit.", f: r => money(r.valorUnitarioBruto) },
+        { label: "DY", f: r => (r.dyEvento || 0).toFixed(2) + "%" },
+        { label: "Carteira", f: r => r.estaNaCarteira ? "Sim" : "Não" }
+      ]);
+    }
+
+    function renderMemory() {
+      const theses = state.memory.ativos || {};
+      const positions = state.positions.posicoes;
+      const missing = positions.filter(p => !theses[p.ticker]).length;
+
+      memTheses.textContent = Object.keys(theses).length;
+      memMissing.textContent = missing;
+      memTasks.textContent = (state.memory.pendencias || []).length;
+
+      memoryTasks.innerHTML = (state.memory.pendencias || []).slice(0, 40).map(t => `
+        <div class="alert warn">
+          <strong>${safe(t.ticker)}</strong> — ${safe(t.motivo)}<br>
+          <span class="muted small">Prioridade: ${safe(t.prioridade)} • Valor: ${money(t.valorAtualizado)}</span>
+          <div style="margin-top:8px">
+            <button onclick="openThesisDialog('${safe(t.ticker)}')">Registrar tese</button>
+          </div>
+        </div>
+      `).join("") || `<div class="alert ok">Sem pendências de tese.</div>`;
+
+      thesisList.innerHTML = Object.values(theses).map(t => `
+        <div class="alert ok">
+          <strong>${safe(t.ticker)} — ${safe(t.funcaoNaCarteira)}</strong><br>
+          ${safe(t.teseAtual)}<br>
+          <span class="muted small">
+            Status: ${safe(t.statusTese)} • Convicção: ${safe(t.conviccao)}/10 • Revisão: ${safe(t.prazoRevisao || "")}
+          </span>
+        </div>
+      `).join("") || `<div class="alert info">Nenhuma tese registrada ainda.</div>`;
+    }
+
+    function renderJsonBox() {
+      const key = jsonSelect?.value || "imports";
+
+      jsonBox.textContent = JSON.stringify(jsonData(key), null, 2);
+      aiBundleBox.textContent = JSON.stringify(state.aiBundle, null, 2);
+    }
+
+    function jsonData(key) {
+      return {
+        imports: { imports: state.imports },
+        assetMaster: state.assetMaster,
+        positions: state.positions,
+        movements: state.movements,
+        income: state.income,
+        events: state.events,
+        performance: state.performance,
+        memory: state.memory,
+        aiBundle: state.aiBundle
+      }[key] || state;
+    }
+
+    function renderDynamicResults() {
+      const total = state.positions.posicoes.reduce((s, p) => s + Number(p.valorAtualizado || 0), 0);
+      const income = state.income.proventosRecebidos.reduce((s, p) => s + Number(p.valorTotal || 0), 0);
+      const classes = groupSum(state.positions.posicoes, "classe", "valorAtualizado");
+      const top = [...state.positions.posicoes].sort((a, b) => b.valorAtualizado - a.valorAtualizado).slice(0, 5);
+
+      dynamicResults.innerHTML = `
+        <div class="grid cols2">
+          <div class="mini-result">
+            <strong>${money(total)}</strong>
+            <span>Valor detectado</span>
+          </div>
+          <div class="mini-result">
+            <strong>${money(income)}</strong>
+            <span>Renda recebida</span>
+          </div>
+        </div>
+
+        <h3 style="margin-top:14px">Concentração por classe</h3>
+        ${
+          Object.entries(classes).map(([c, v]) => `
+            <div class="chart-line">
+              <span>${safe(c)}</span>
+              <div class="bar-wrap">
+                <div class="bar" style="width:${total ? v / total * 100 : 0}%"></div>
+              </div>
+              <strong>${(total ? v / total * 100 : 0).toFixed(1)}%</strong>
+            </div>
+          `).join("") || `<div class="alert info">Importe posições para gerar gráficos.</div>`
+        }
+
+        <h3 style="margin-top:14px">Maiores posições</h3>
+        ${
+          top.map(p => `
+            <div class="chart-line">
+              <span>${safe(p.ticker)}</span>
+              <div class="bar-wrap">
+                <div class="bar" style="width:${total ? p.valorAtualizado / total * 100 : 0}%"></div>
+              </div>
+              <strong>${money(p.valorAtualizado)}</strong>
+            </div>
+          `).join("") || `<div class="alert info">Sem posições carregadas.</div>`
+        }
+      `;
+    }
+
+    function renderChat() {
+      const base = `
+        <div class="chat-msg assistant">
+          <strong>Guido Wealth IA</strong>
+          <p>Importe dados da B3 e pergunte sobre carteira, renda, risco, concentração, proventos, eventos futuros, teses ou decisões.</p>
+        </div>
+      `;
+
+      chatHistory.innerHTML = base + (state.chat || []).map(m => `
+        <div class="chat-msg ${m.role}">
+          <strong>${m.role === "user" ? "Você" : "Guido Wealth IA"}</strong>
+          <p>${safe(m.text)}</p>
+        </div>
+      `).join("");
+
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+
+    function askPreset(text) {
+      aiQuestion.value = text;
+      handleAiQuestion();
+    }
+
+    async function handleAiQuestion() {
+      const q = (aiQuestion.value || "").trim();
+
+      if (!q) return;
+
+      state.chat = state.chat || [];
+      state.chat.push({
+        role: "user",
+        text: q,
+        at: new Date().toISOString()
+      });
+
+      renderChat();
+      setBackendStatus("Enviando pergunta ao backend Google...", "");
+
+      try {
+        const answer = await askBackend(q);
+
+        state.chat.push({
+          role: "assistant",
+          text: answer,
+          at: new Date().toISOString()
+        });
+
+        setBackendStatus("Resposta recebida do backend Google.", "ok");
+
+      } catch (err) {
+        const local = localAiAnswer(q);
+
+        state.chat.push({
+          role: "assistant",
+          text: local + "\n\nObservação técnica: o backend não respondeu neste teste. Resposta local exibida como fallback.",
+          at: new Date().toISOString()
+        });
+
+        setBackendStatus("Backend não respondeu: " + err.message, "err");
+      }
+
+      aiQuestion.value = "";
+      saveState();
+    }
+
+    function localAiAnswer(q) {
+      const total = state.positions.posicoes.reduce((s, p) => s + Number(p.valorAtualizado || 0), 0);
+      const income = state.income.proventosRecebidos.reduce((s, p) => s + Number(p.valorTotal || 0), 0);
+      const alerts = (state.memory.alertas || []).length;
+      const missing = (state.memory.pendencias || []).length;
+      const top = [...state.positions.posicoes]
+        .sort((a, b) => b.valorAtualizado - a.valorAtualizado)
+        .slice(0, 3)
+        .map(p => p.ticker)
+        .join(", ") || "nenhuma posição detectada";
+
+      return (
+        "Leitura local inicial:\n\n" +
+        "A base possui " + Object.keys(state.assetMaster.ativos).length + " ativos identificados.\n" +
+        "Valor detectado: " + money(total) + ".\n" +
+        "Renda recebida: " + money(income) + ".\n" +
+        "Alertas heurísticos: " + alerts + ".\n" +
+        "Pendências de tese: " + missing + ".\n" +
+        "Maiores posições: " + top + ".\n\n" +
+        "Pergunta recebida: " + q
+      );
+    }
+
+    async function askBackend(question) {
+      const pin = backendPin.value || "2026";
+
+      const payload = {
+        action: "ask",
+        pin,
+        question,
+        source: "guido_wealth_html",
+        bundle: state.aiBundle
+      };
+
+      const response = await fetch(BACKEND_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await response.text();
+
+      let data;
+
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error("Resposta não veio em JSON.");
+      }
+
+      if (!data.ok) {
+        throw new Error(data.error || "Erro desconhecido no backend.");
+      }
+
+      if (data.docUrl) {
+        state.backend.docUrl = data.docUrl;
+      }
+
+      state.backend.ok = true;
+      state.backend.lastPing = new Date().toISOString();
+
+      return data.answer || data.message || "Backend respondeu sem texto.";
+    }
+
+    async function saveMemoryToBackend() {
+      const pin = backendPin.value || "2026";
+      const text = (aiQuestion.value || "").trim();
+
+      if (!text) {
+        alert("Digite algo na caixa de mensagem para salvar como memória.");
+        return;
+      }
+
+      setBackendStatus("Salvando entrada na Memória Patrimonial IA...", "");
+
+      try {
+        const payload = {
+          action: "save_memory",
+          pin,
+          author: "Guido",
+          text,
+          bundle: state.aiBundle
+        };
+
+        const response = await fetch(BACKEND_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = JSON.parse(await response.text());
+
+        if (!data.ok) {
+          throw new Error(data.error || "Erro ao salvar memória.");
+        }
+
+        setBackendStatus("Memória salva no Google Docs.", "ok");
+
+        if (data.docUrl) {
+          state.backend.docUrl = data.docUrl;
+          state.backend.ok = true;
+          saveState();
+        }
+
+      } catch (err) {
+        setBackendStatus("Erro ao salvar memória: " + err.message, "err");
+      }
+    }
+
+    function setBackendStatus(message, type) {
+      backendStatus.textContent = message;
+      backendStatus.className = "backend-status" + (type ? " " + type : "");
+    }
+
+    function jsonpRequest(params) {
+      return new Promise((resolve, reject) => {
+        const callbackName = "jsonp_" + Date.now() + "_" + Math.floor(Math.random() * 999999);
+        params.callback = callbackName;
+
+        const url = new URL(BACKEND_URL);
+
+        Object.entries(params).forEach(([k, v]) => {
+          url.searchParams.set(k, v);
+        });
+
+        const script = document.createElement("script");
+        script.src = url.toString();
+
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error("Tempo esgotado."));
+        }, 20000);
+
+        function cleanup() {
+          clearTimeout(timeout);
+          delete window[callbackName];
+
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+        }
+
+        window[callbackName] = function(data) {
+          cleanup();
+          resolve(data);
+        };
+
+        script.onerror = function() {
+          cleanup();
+          reject(new Error("Falha ao carregar resposta JSONP."));
+        };
+
+        document.body.appendChild(script);
+      });
+    }
+
+    async function testBackend() {
+      setBackendStatus("Testando backend Google Apps Script...", "");
+
+      try {
+        const data = await jsonpRequest({ action: "ping" });
+
+        if (!data.ok) {
+          throw new Error(data.error || "Backend retornou erro.");
+        }
+
+        state.backend.ok = true;
+        state.backend.docUrl = data.docUrl || null;
+        state.backend.lastPing = new Date().toISOString();
+
+        setBackendStatus("Backend ativo. Documento: " + (data.docUrl || "não informado"), "ok");
+        saveState();
+
+      } catch (err) {
+        state.backend.ok = false;
+        setBackendStatus("Erro no backend: " + err.message, "err");
+        saveState();
+      }
+    }
+
+    function buildPrompt() {
+      return (
+        "Você é o Guido Wealth IA, copiloto patrimonial. " +
+        "Analise o pacote abaixo e responda à pergunta do usuário com base nos dados B3, memória patrimonial e heurísticas. " +
+        "Não dê ordem absoluta de compra/venda; use linguagem de apoio à decisão.\n\n" +
+        "AI_CONTEXT_BUNDLE:\n" +
+        JSON.stringify(state.aiBundle, null, 2)
+      );
+    }
+
+    function copyPrompt() {
+      navigator.clipboard.writeText(buildPrompt());
+      alert("Contexto copiado.");
+    }
+
+    function copyJson() {
+      navigator.clipboard.writeText(jsonBox.textContent);
+      alert("JSON copiado.");
+    }
+
+    function exportAllJson() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], {
+        type: "application/json"
+      });
+
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "guido-wealth-intelligence-backup.json";
+      a.click();
+
+      URL.revokeObjectURL(a.href);
+    }
+
+    function importBackup(event) {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      const r = new FileReader();
+
+      r.onload = () => {
+        try {
+          state = JSON.parse(r.result);
+          saveState();
+        } catch (e) {
+          alert("Backup inválido.");
+        }
+      };
+
+      r.readAsText(file);
+    }
+
+    function clearAll() {
+      if (confirm("Zerar toda a base local?")) {
+        state = initialState();
+        saveState();
+      }
+    }
+
+    function openThesisDialog(ticker = "") {
+      thTicker.value = ticker;
+
+      const t = state.memory.ativos[ticker] || {};
+
+      thFunction.value = t.funcaoNaCarteira || "Núcleo de renda";
+      thStatus.value = t.statusTese || "nao_definida";
+      thText.value = t.teseAtual || "";
+      thRisks.value = (t.riscosPrincipais || []).join("\n");
+      thTarget.value = t.alocacaoAlvo || "";
+      thReview.value = t.prazoRevisao || "";
+      thConviction.value = t.conviccao || 5;
+
+      thesisDialog.showModal();
+    }
+
+    function saveThesis() {
+      const ticker = String(thTicker.value || "").toUpperCase().trim();
+
+      if (!ticker) {
+        alert("Informe o ticker.");
+        return;
+      }
+
+      state.memory.ativos[ticker] = {
+        ticker,
+        funcaoNaCarteira: thFunction.value,
+        statusTese: thStatus.value,
+        teseAtual: thText.value,
+        riscosPrincipais: thRisks.value.split("\n").map(x => x.trim()).filter(Boolean),
+        alocacaoAlvo: num(thTarget.value),
+        prazoRevisao: thReview.value,
+        conviccao: num(thConviction.value),
+        atualizadoEm: new Date().toISOString()
+      };
+
+      buildMemoryTasks();
+      buildAiBundle();
+      saveState();
+
+      thesisDialog.close();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>
