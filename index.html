@@ -3,884 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guido Wealth Intelligence — Versão 7.2</title>
+  <title>Guido Wealth Intelligence — Versão 7.3</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
-    :root {
-      --bg: #050711;
-      --panel: #101827;
-      --panel2: #162033;
-      --line: #2a3650;
-      --text: #f8fafc;
-      --muted: #9aa8bd;
-      --accent: #38bdf8;
-      --green: #22c55e;
-      --gold: #f59e0b;
-      --red: #ef4444;
-      --purple: #a78bfa;
-      --shadow: 0 22px 70px rgba(0,0,0,.42);
-      --radius: 22px;
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      --sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: var(--sans);
-      color: var(--text);
-      background:
-        radial-gradient(circle at top left, rgba(56,189,248,.18), transparent 30%),
-        radial-gradient(circle at 86% 0%, rgba(167,139,250,.13), transparent 30%),
-        linear-gradient(180deg, #050711, #0b1020 45%, #050711);
-      min-height: 100vh;
-    }
-    .app { max-width: 1580px; margin: auto; padding: 20px 16px 90px; }
-    header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
-    .brand { display: flex; gap: 14px; align-items: center; }
-    .logo {
-      width: 68px; height: 68px; border-radius: 24px; display: grid; place-items: center;
-      background: linear-gradient(135deg, var(--accent), var(--green)); color: #04101d;
-      font-size: 23px; font-weight: 950; box-shadow: 0 15px 36px rgba(56,189,248,.28);
-    }
-    h1 { font-size: 32px; line-height: 1.05; margin: 0 0 6px; letter-spacing: -.035em; }
-    .subtitle { color: var(--muted); max-width: 1120px; font-size: 14px; line-height: 1.45; }
-    .actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
-    button, .btn, label.btn {
-      border: 1px solid var(--line); background: var(--panel2); color: var(--text); border-radius: 15px;
-      padding: 11px 14px; font-weight: 900; cursor: pointer; text-decoration: none;
-      display: inline-flex; gap: 8px; align-items: center; justify-content: center; transition: .18s ease; font-size: 13px;
-    }
-    button:hover, .btn:hover { transform: translateY(-1px); border-color: #51617a; }
-    .primary { border: 0; background: linear-gradient(135deg, var(--accent), var(--green)); color: #04101d; }
-    .gold { border: 0; background: linear-gradient(135deg, var(--gold), #fb923c); color: #111827; }
-    .danger { background: #2c1216; border-color: #7f1d1d; color: #fecaca; }
-    .green { background: #0f2a1c; border-color: #166534; color: #bbf7d0; }
-    .blue { background: #0d1e3c; border-color: #1d4ed8; color: #bfdbfe; }
-    .tabs {
-      position: sticky; top: 0; z-index: 20; display: flex; gap: 8px; overflow: auto;
-      background: rgba(7,11,22,.86); border: 1px solid var(--line); border-radius: 19px;
-      padding: 8px; backdrop-filter: blur(16px); box-shadow: 0 18px 45px rgba(0,0,0,.28); margin: 18px 0;
-    }
-    .tab { white-space: nowrap; padding: 10px 13px; border-radius: 13px; color: var(--muted); font-weight: 950; font-size: 13px; cursor: pointer; }
-    .tab.active { background: var(--accent); color: #06111f; }
-    section { display: none; }
-    section.active { display: block; }
-    .hero { border: 1px solid var(--line); border-radius: 28px; padding: 22px; background: linear-gradient(135deg, rgba(17,24,39,.96), rgba(9,14,25,.97)); box-shadow: var(--shadow); }
-    .quote { font-size: 24px; font-weight: 950; color: #e0f2fe; margin-bottom: 8px; letter-spacing: -.025em; }
-    .hero p { color: #cbd5e1; max-width: 1200px; line-height: 1.58; margin: 0; }
-    .grid { display: grid; gap: 14px; }
-    .cols5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .cols4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .cols3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .cols2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .card { border: 1px solid var(--line); background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(12,18,31,.98)); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); }
-    h2, h3 { margin: 0 0 12px; letter-spacing: -.025em; }
-    h2 { font-size: 22px; }
-    h3 { font-size: 17px; }
-    .muted { color: var(--muted); }
-    .small { font-size: 12px; }
-    .mono { font-family: var(--mono); }
-    .metric .label { font-size: 12px; color: var(--muted); font-weight: 950; text-transform: uppercase; letter-spacing: .06em; }
-    .metric .value { font-size: 26px; font-weight: 950; margin: 6px 0; letter-spacing: -.04em; }
-    .metric .note { font-size: 12px; color: var(--muted); line-height: 1.35; }
-    input, select, textarea { width: 100%; background: #08111f; color: var(--text); border: 1px solid var(--line); border-radius: 13px; padding: 10px; outline: none; }
-    textarea { min-height: 96px; resize: vertical; }
-    label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-weight: 850; font-size: 12px; }
-    .dropzone { border: 2px dashed #355071; background: linear-gradient(135deg, rgba(56,189,248,.08), rgba(34,197,94,.05)); border-radius: 26px; padding: 28px; text-align: center; min-height: 190px; display: grid; place-items: center; transition: .18s ease; }
-    .dropzone.drag { border-color: var(--accent); background: rgba(56,189,248,.14); transform: scale(1.006); }
-    .dropzone .big { font-size: 25px; font-weight: 950; margin-bottom: 6px; color: #e0f2fe; }
-    .dropzone p { color: var(--muted); margin: 0 auto 16px; max-width: 900px; line-height: 1.5; }
-    .shell { display: grid; grid-template-columns: minmax(430px,.9fr) 1.1fr; gap: 14px; margin-top: 14px; align-items: start; }
-    .chat-history { display: grid; gap: 10px; max-height: 520px; overflow: auto; background: #07101f; border: 1px solid var(--line); border-radius: 18px; padding: 12px; }
-    .chat-msg { padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: #0a1220; }
-    .chat-msg.user { background: #0d1e3c; border-color: #1d4ed8; }
-    .chat-msg.assistant { background: #0c1e14; border-color: #166534; }
-    .chat-msg strong { display: block; margin-bottom: 4px; }
-    .chat-msg p { margin: 0; color: #dbeafe; line-height: 1.45; white-space: pre-wrap; }
-    .quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-    .quick button { font-size: 12px; padding: 9px 10px; }
-    .status { margin-top: 10px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: #08111f; color: var(--muted); font-size: 12px; line-height: 1.4; }
-    .status.ok { border-color: #166534; color: #bbf7d0; background: #0c1e14; }
-    .status.err { border-color: #7f1d1d; color: #fecaca; background: #220f12; }
-    .visual-answer { border: 1px solid #075985; background: #071323; border-radius: 18px; padding: 14px; white-space: pre-wrap; line-height: 1.45; }
-    .visual-answer strong { color: #bae6fd; }
-    .impact-card { border: 1px solid var(--line); background: linear-gradient(135deg, #08111f, #101827); border-radius: 18px; padding: 14px; }
-    .impact-card .big-number { font-size: 28px; font-weight: 950; color: #bbf7d0; letter-spacing: -.05em; }
-    .impact-card .caption { color: var(--muted); font-size: 12px; font-weight: 850; }
-    .chart-line { display: grid; grid-template-columns: 140px 1fr auto; gap: 10px; align-items: center; margin: 9px 0; color: #cbd5e1; font-size: 12px; }
-    .bar-wrap { height: 15px; background: #09111f; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-    .bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--green), var(--gold)); width: 0; }
-    .sparkline { height: 44px; display: flex; align-items: end; gap: 4px; border: 1px solid var(--line); background: #08111f; border-radius: 14px; padding: 8px; margin-top: 12px; }
-    .sparkline span { flex: 1; min-width: 4px; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, var(--accent), var(--green)); }
-    .alert { padding: 12px; border: 1px solid var(--line); border-radius: 15px; background: #0a1220; margin: 8px 0; line-height: 1.45; }
-    .alert.warn { border-color: #7c4a03; background: #211707; }
-    .alert.ok { border-color: #166534; background: #0c1e14; }
-    .alert.info { border-color: #075985; background: #081b27; }
-    .alert.danger { border-color: #7f1d1d; background: #220f12; }
-    .alert.purple { border-color: #6d28d9; background: #170f2b; }
-    .file-list { display: grid; gap: 10px; }
-    .file-item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: #0a1220; }
-    .file-item small { color: var(--muted); font-weight: 800; }
-    .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 999px; border: 1px solid var(--line); background: #0b1220; color: #dbeafe; font-size: 12px; font-weight: 850; margin: 2px; }
-    .pill.ok { border-color: #16a34a; color: #bbf7d0; }
-    .pill.warn { border-color: #f59e0b; color: #fde68a; }
-    .pill.info { border-color: #38bdf8; color: #bae6fd; }
-    .jsonbox { background: #030712; border: 1px solid var(--line); border-radius: 18px; padding: 14px; max-height: 640px; overflow: auto; font-family: var(--mono); font-size: 12px; color: #d1fae5; white-space: pre-wrap; line-height: 1.42; }
-    .table-wrap { overflow: auto; max-height: 650px; border: 1px solid var(--line); border-radius: 18px; background: #08111f; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th, td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; }
-    th { color: #dbeafe; background: rgba(255,255,255,.025); position: sticky; top: 58px; z-index: 2; }
-    .thinking-panel { border: 1px solid #075985; background: radial-gradient(circle at 20% 20%, rgba(56,189,248,.18), transparent 38%), linear-gradient(135deg,#061323,#08111f); border-radius: 20px; padding: 16px; overflow: hidden; }
-    .thinking-header { display: flex; align-items: center; gap: 10px; font-weight: 950; color: #e0f2fe; }
-    .pulse-orb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 0 rgba(56,189,248,.7); animation: pulse 1.35s infinite; }
-    .thinking-steps { display: grid; gap: 8px; margin-top: 12px; }
-    .thinking-step { display: flex; justify-content: space-between; gap: 10px; border: 1px solid var(--line); background: #07101f; border-radius: 14px; padding: 9px 10px; color: #cbd5e1; font-size: 12px; }
-    .thinking-step.active { border-color: #38bdf8; color: #e0f2fe; }
-    .thinking-bar { height: 10px; border-radius: 99px; background: #07101f; border: 1px solid var(--line); overflow: hidden; margin-top: 12px; }
-    .thinking-bar span { display: block; height: 100%; width: 35%; background: linear-gradient(90deg,var(--accent),var(--green),var(--gold)); animation: slide 1.3s infinite; }
-    .config-highlight { border: 1px solid #38bdf8; background: linear-gradient(135deg, rgba(56,189,248,.08), rgba(167,139,250,.08)); border-radius: 20px; padding: 14px; margin-top: 12px; }
-    .form-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; }
-    .full { grid-column: 1 / -1; }
-    dialog { border: 1px solid var(--line); border-radius: 22px; background: var(--panel); color: var(--text); width: min(1040px, calc(100% - 24px)); box-shadow: 0 30px 90px rgba(0,0,0,.72); }
-    dialog::backdrop { background: rgba(0,0,0,.72); }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin-bottom: 12px; }
-    @keyframes pulse { 70% { box-shadow: 0 0 0 12px rgba(56,189,248,0); } }
-    @keyframes slide { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
-    @media(max-width: 980px) {
-      header { flex-direction: column; }
-      .actions { justify-content: flex-start; }
-      .cols5, .cols4, .cols3, .cols2, .shell, .form-grid { grid-template-columns: 1fr; }
-      .app { padding: 14px 10px 88px; }
-      .chart-line { grid-template-columns: 1fr; }
-      .metric .value { font-size: 23px; }
-      th { position: static; }
-    }
+    :root{--bg:#050711;--panel:#101827;--panel2:#162033;--line:#2a3650;--text:#f8fafc;--muted:#9aa8bd;--accent:#38bdf8;--green:#22c55e;--gold:#f59e0b;--red:#ef4444;--purple:#a78bfa;--shadow:0 22px 70px rgba(0,0,0,.42);--radius:22px;--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;--sans:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif}
+    *{box-sizing:border-box}body{margin:0;font-family:var(--sans);color:var(--text);background:radial-gradient(circle at top left,rgba(56,189,248,.18),transparent 30%),radial-gradient(circle at 86% 0%,rgba(167,139,250,.13),transparent 30%),linear-gradient(180deg,#050711,#0b1020 45%,#050711);min-height:100vh}.app{max-width:1580px;margin:auto;padding:20px 16px 90px}header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.brand{display:flex;gap:14px;align-items:center}.logo{width:68px;height:68px;border-radius:24px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--green));color:#04101d;font-size:23px;font-weight:950;box-shadow:0 15px 36px rgba(56,189,248,.28)}h1{font-size:32px;line-height:1.05;margin:0 0 6px;letter-spacing:-.035em}.subtitle{color:var(--muted);max-width:1120px;font-size:14px;line-height:1.45}.actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}button,.btn,label.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:15px;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;gap:8px;align-items:center;justify-content:center;transition:.18s ease;font-size:13px}button:hover,.btn:hover{transform:translateY(-1px);border-color:#51617a}.primary{border:0;background:linear-gradient(135deg,var(--accent),var(--green));color:#04101d}.gold{border:0;background:linear-gradient(135deg,var(--gold),#fb923c);color:#111827}.danger{background:#2c1216;border-color:#7f1d1d;color:#fecaca}.green{background:#0f2a1c;border-color:#166534;color:#bbf7d0}.blue{background:#0d1e3c;border-color:#1d4ed8;color:#bfdbfe}.tabs{position:sticky;top:0;z-index:20;display:flex;gap:8px;overflow:auto;background:rgba(7,11,22,.86);border:1px solid var(--line);border-radius:19px;padding:8px;backdrop-filter:blur(16px);box-shadow:0 18px 45px rgba(0,0,0,.28);margin:18px 0}.tab{white-space:nowrap;padding:10px 13px;border-radius:13px;color:var(--muted);font-weight:950;font-size:13px;cursor:pointer}.tab.active{background:var(--accent);color:#06111f}section{display:none}section.active{display:block}.hero{border:1px solid var(--line);border-radius:28px;padding:22px;background:linear-gradient(135deg,rgba(17,24,39,.96),rgba(9,14,25,.97));box-shadow:var(--shadow)}.quote{font-size:24px;font-weight:950;color:#e0f2fe;margin-bottom:8px;letter-spacing:-.025em}.hero p{color:#cbd5e1;max-width:1200px;line-height:1.58;margin:0}.grid{display:grid;gap:14px}.cols5{grid-template-columns:repeat(5,minmax(0,1fr))}.cols4{grid-template-columns:repeat(4,minmax(0,1fr))}.cols3{grid-template-columns:repeat(3,minmax(0,1fr))}.cols2{grid-template-columns:repeat(2,minmax(0,1fr))}.card{border:1px solid var(--line);background:linear-gradient(180deg,rgba(17,24,39,.98),rgba(12,18,31,.98));border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}h2,h3{margin:0 0 12px;letter-spacing:-.025em}h2{font-size:22px}h3{font-size:17px}.muted{color:var(--muted)}.small{font-size:12px}.mono{font-family:var(--mono)}.metric .label{font-size:12px;color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:.06em}.metric .value{font-size:26px;font-weight:950;margin:6px 0;letter-spacing:-.04em}.metric .note{font-size:12px;color:var(--muted);line-height:1.35}input,select,textarea{width:100%;background:#08111f;color:var(--text);border:1px solid var(--line);border-radius:13px;padding:10px;outline:none}textarea{min-height:96px;resize:vertical}label{display:flex;flex-direction:column;gap:6px;color:var(--muted);font-weight:850;font-size:12px}.dropzone{border:2px dashed #355071;background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(34,197,94,.05));border-radius:26px;padding:28px;text-align:center;min-height:190px;display:grid;place-items:center;transition:.18s ease}.dropzone.drag{border-color:var(--accent);background:rgba(56,189,248,.14);transform:scale(1.006)}.dropzone .big{font-size:25px;font-weight:950;margin-bottom:6px;color:#e0f2fe}.dropzone p{color:var(--muted);margin:0 auto 16px;max-width:900px;line-height:1.5}.shell{display:grid;grid-template-columns:minmax(430px,.9fr) 1.1fr;gap:14px;margin-top:14px;align-items:start}.chat-history{display:grid;gap:10px;max-height:520px;overflow:auto;background:#07101f;border:1px solid var(--line);border-radius:18px;padding:12px}.chat-msg{padding:12px;border-radius:16px;border:1px solid var(--line);background:#0a1220}.chat-msg.user{background:#0d1e3c;border-color:#1d4ed8}.chat-msg.assistant{background:#0c1e14;border-color:#166534}.chat-msg strong{display:block;margin-bottom:4px}.chat-msg p{margin:0;color:#dbeafe;line-height:1.45;white-space:pre-wrap}.quick{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.quick button{font-size:12px;padding:9px 10px}.status{margin-top:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:#08111f;color:var(--muted);font-size:12px;line-height:1.4}.status.ok{border-color:#166534;color:#bbf7d0;background:#0c1e14}.status.err{border-color:#7f1d1d;color:#fecaca;background:#220f12}.visual-answer{border:1px solid #075985;background:#071323;border-radius:18px;padding:14px;white-space:pre-wrap;line-height:1.45}.visual-answer strong{color:#bae6fd}.impact-card{border:1px solid var(--line);background:linear-gradient(135deg,#08111f,#101827);border-radius:18px;padding:14px}.impact-card .big-number{font-size:28px;font-weight:950;color:#bbf7d0;letter-spacing:-.05em}.impact-card .caption{color:var(--muted);font-size:12px;font-weight:850}.chart-line{display:grid;grid-template-columns:140px 1fr auto;gap:10px;align-items:center;margin:9px 0;color:#cbd5e1;font-size:12px}.bar-wrap{height:15px;background:#09111f;border:1px solid var(--line);border-radius:999px;overflow:hidden}.bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--green),var(--gold));width:0}.sparkline{height:44px;display:flex;align-items:end;gap:4px;border:1px solid var(--line);background:#08111f;border-radius:14px;padding:8px;margin-top:12px}.sparkline span{flex:1;min-width:4px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--accent),var(--green))}.alert{padding:12px;border:1px solid var(--line);border-radius:15px;background:#0a1220;margin:8px 0;line-height:1.45}.alert.warn{border-color:#7c4a03;background:#211707}.alert.ok{border-color:#166534;background:#0c1e14}.alert.info{border-color:#075985;background:#081b27}.alert.danger{border-color:#7f1d1d;background:#220f12}.alert.purple{border-color:#6d28d9;background:#170f2b}.file-list{display:grid;gap:10px}.file-item{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:16px;padding:12px;background:#0a1220}.file-item small{color:var(--muted);font-weight:800}.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid var(--line);background:#0b1220;color:#dbeafe;font-size:12px;font-weight:850;margin:2px}.pill.ok{border-color:#16a34a;color:#bbf7d0}.pill.warn{border-color:#f59e0b;color:#fde68a}.pill.info{border-color:#38bdf8;color:#bae6fd}.jsonbox{background:#030712;border:1px solid var(--line);border-radius:18px;padding:14px;max-height:640px;overflow:auto;font-family:var(--mono);font-size:12px;color:#d1fae5;white-space:pre-wrap;line-height:1.42}.table-wrap{overflow:auto;max-height:650px;border:1px solid var(--line);border-radius:18px;background:#08111f}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:10px;text-align:left;vertical-align:top}th{color:#dbeafe;background:rgba(255,255,255,.025);position:sticky;top:58px;z-index:2}.thinking-panel{border:1px solid #075985;background:radial-gradient(circle at 20% 20%,rgba(56,189,248,.18),transparent 38%),linear-gradient(135deg,#061323,#08111f);border-radius:20px;padding:16px;overflow:hidden}.thinking-header{display:flex;align-items:center;gap:10px;font-weight:950;color:#e0f2fe}.pulse-orb{width:16px;height:16px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 0 rgba(56,189,248,.7);animation:pulse 1.35s infinite}.thinking-steps{display:grid;gap:8px;margin-top:12px}.thinking-step{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--line);background:#07101f;border-radius:14px;padding:9px 10px;color:#cbd5e1;font-size:12px}.thinking-step.active{border-color:#38bdf8;color:#e0f2fe}.thinking-bar{height:10px;border-radius:99px;background:#07101f;border:1px solid var(--line);overflow:hidden;margin-top:12px}.thinking-bar span{display:block;height:100%;width:35%;background:linear-gradient(90deg,var(--accent),var(--green),var(--gold));animation:slide 1.3s infinite}.config-highlight{border:1px solid #38bdf8;background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(167,139,250,.08));border-radius:20px;padding:14px;margin-top:12px}.form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.full{grid-column:1/-1}.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:12px}@keyframes pulse{70%{box-shadow:0 0 0 12px rgba(56,189,248,0)}}@keyframes slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}@media(max-width:980px){header{flex-direction:column}.actions{justify-content:flex-start}.cols5,.cols4,.cols3,.cols2,.shell,.form-grid{grid-template-columns:1fr}.app{padding:14px 10px 88px}.chart-line{grid-template-columns:1fr}.metric .value{font-size:23px}th{position:static}}
   </style>
 </head>
 <body>
   <div class="app">
     <header>
-      <div class="brand">
-        <div class="logo">7.2</div>
-        <div>
-          <h1>Guido Wealth Intelligence — Versão 7.2</h1>
-          <div class="subtitle">Google-first: arquivos B3 são processados na sessão e enviados ao Google Docs via Apps Script. A versão 7.2 consulta a BRAPI em lotes inteligentes para evitar o limite de ativos por requisição.</div>
-        </div>
-      </div>
-      <div class="actions">
-        <label class="btn primary">Importar Dados<input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.pdf,.json" multiple style="display:none" /></label>
-        <button class="blue" onclick="openConfigDialog()">Configurar GPT / BRAPI</button>
-        <button class="green" onclick="testBackend()">Testar Backend</button>
-        <button class="gold" onclick="exportSessionJson()">Exportar Sessão</button>
-        <button class="danger" onclick="clearSession()">Limpar Sessão</button>
-      </div>
+      <div class="brand"><div class="logo">7.3</div><div><h1>Guido Wealth Intelligence — Versão 7.3</h1><div class="subtitle">Força bruta organizada: o app captura o máximo possível dos arquivos, salva no Google em blocos amplos e livres, evita repetição por fingerprints e mantém GPT/BRAPI apenas como camadas auxiliares.</div></div></div>
+      <div class="actions"><label class="btn primary">Importar Dados<input id="fileInput" type="file" accept=".xlsx,.xls,.csv,.pdf,.json" multiple style="display:none" /></label><button class="blue" onclick="showPanel('configQuick',document.querySelectorAll('.tab')[1])">Configurar GPT / BRAPI</button><button class="green" onclick="testBackend()">Testar Backend</button><button class="gold" onclick="exportSessionJson()">Exportar Sessão</button><button class="danger" onclick="clearSession()">Limpar Sessão</button></div>
     </header>
-
-    <nav class="tabs">
-      <div class="tab active" onclick="showPanel('portal',this)">Portal Profundo</div>
-      <div class="tab" onclick="showPanel('configQuick',this)">GPT / BRAPI</div>
-      <div class="tab" onclick="showPanel('dados',this)">Dados B3</div>
-      <div class="tab" onclick="showPanel('carteira',this)">Carteira</div>
-      <div class="tab" onclick="showPanel('jsons',this)">JSONs</div>
-    </nav>
+    <nav class="tabs"><div class="tab active" onclick="showPanel('portal',this)">Portal Profundo</div><div class="tab" onclick="showPanel('configQuick',this)">GPT / BRAPI</div><div class="tab" onclick="showPanel('dados',this)">Dados Brutos</div><div class="tab" onclick="showPanel('carteira',this)">Carteira</div><div class="tab" onclick="showPanel('jsons',this)">JSONs</div></nav>
 
     <section id="portal" class="active">
-      <div class="hero">
-        <div class="quote">Versão 7.2: BRAPI em lotes, Google como memória e navegador como painel.</div>
-        <p>O app processa o arquivo no momento, cria indicadores e envia snapshot ao Google. A BRAPI agora é chamada em blocos de até 10 tickers, reduzindo erro de limite do plano e mantendo a leitura externa integrada.</p>
-      </div>
-
-      <div class="grid cols5" style="margin-top:14px">
-        <div class="card metric"><div class="label">Arquivos</div><div class="value" id="mFiles">0</div><div class="note">Importados na sessão.</div></div>
-        <div class="card metric"><div class="label">Ativos</div><div class="value" id="mAssets">0</div><div class="note">Tickers válidos.</div></div>
-        <div class="card metric"><div class="label">Valor</div><div class="value" id="mValue">R$ 0,00</div><div class="note">Patrimônio detectado.</div></div>
-        <div class="card metric"><div class="label">Google</div><div class="value" id="mGoogle">—</div><div class="note">Backend / Docs.</div></div>
-        <div class="card metric"><div class="label">BRAPI</div><div class="value" id="mBrapi">—</div><div class="note">Dados externos.</div></div>
-      </div>
-
-      <div class="card" style="margin-top:14px">
-        <h2>1. Entrada de dados B3</h2>
-        <div class="dropzone" id="dropzone">
-          <div>
-            <div class="big">Solte aqui arquivos da B3, CSV, PDF ou JSON</div>
-            <p>A planilha bruta não é salva no navegador. A sessão calcula carteira, renda, eventos, contexto IA e envia o snapshot ao Google Docs com camada de deduplicação.</p>
-            <label class="btn primary">Selecionar arquivos<input id="fileInput2" type="file" accept=".xlsx,.xls,.csv,.pdf,.json" multiple style="display:none" /></label>
-          </div>
-        </div>
-        <div id="importList" class="file-list" style="margin-top:12px"></div>
-      </div>
-
-      <div class="shell">
-        <div class="card">
-          <h2>2. Conversa profunda</h2>
-          <p class="muted">Pergunte como se estivesse no ChatGPT, mas usando sua carteira B3, sua memória no Google e dados externos quando disponíveis.</p>
-          <div class="grid cols3">
-            <label>Modo IA<select id="aiMode" onchange="saveConfigFromScreen()"><option value="backend">Backend Apps Script</option><option value="openai_direct">OpenAI direto — teste local</option><option value="local">Local heurístico</option></select></label>
-            <label>Modelo GPT<input id="openAiModel" value="gpt-4.1-mini" oninput="saveConfigFromScreen()" /></label>
-            <label>PIN Backend<input id="backendPin" type="password" value="2026" /></label>
-          </div>
-          <div id="chatHistory" class="chat-history" style="margin-top:12px"></div>
-          <div class="quick">
-            <button onclick="askPreset('Quais são os piores resultados escondidos na minha carteira?')">Pergunta incomum</button>
-            <button onclick="askPreset('Onde minha carteira parece boa, mas pode estar enganando?')">Risco invisível</button>
-            <button onclick="askPreset('Mostre os 10 ativos que mais pagaram dividendos e diga se isso é saudável.')">Top renda</button>
-            <button onclick="askPreset('O que os dados B3 dizem que eu talvez esteja evitando enxergar?')">Leitura desconfortável</button>
-            <button onclick="askPreset('Cruze meus dados internos com dados externos e diga quais ativos merecem investigação.')">Interno + externo</button>
-            <button onclick="askPreset('Gere um parecer curto, visual e estratégico do mês.')">Parecer visual</button>
-          </div>
-          <label>Mensagem para IA<textarea id="aiQuestion" placeholder="Ex.: Quais piores resultados escondidos aparecem quando você cruza renda, concentração, ativos sem tese e dados externos?"></textarea></label>
-          <div class="actions" style="justify-content:flex-start;margin-top:10px">
-            <button class="primary" onclick="handleAiQuestion()">Perguntar à IA</button>
-            <button onclick="consultBrapiForTopAssets()">Buscar BRAPI</button>
-            <button onclick="copyPrompt()">Copiar contexto</button>
-            <button onclick="saveInsightToGoogle()">Salvar insight no Google</button>
-          </div>
-          <div id="backendStatus" class="status">Aguardando ação. Na versão 7.1, a base B3 não é salva no navegador.</div>
-        </div>
-
-        <div class="card">
-          <h2>3. Resultados vivos</h2>
-          <p class="muted">A cada pergunta, esta área muda. As respostas são compactas, visuais e baseadas no insight atual.</p>
-          <div id="dynamicResults"></div>
-        </div>
-      </div>
+      <div class="hero"><div class="quote">Versão 7.3: copiar muito, repetir pouco, interpretar depois.</div><p>Primeira camada por força bruta: cada aba e linha possível dos arquivos é capturada em blocos livres para o Google. A categorização fica como camada secundária. A proteção contra repetição usa fingerprints de arquivo, aba e linha.</p></div>
+      <div class="grid cols5" style="margin-top:14px"><div class="card metric"><div class="label">Arquivos</div><div class="value" id="mFiles">0</div><div class="note">Importados na sessão.</div></div><div class="card metric"><div class="label">Linhas brutas</div><div class="value" id="mRawRows">0</div><div class="note">Captura força bruta.</div></div><div class="card metric"><div class="label">Ativos</div><div class="value" id="mAssets">0</div><div class="note">Tickers válidos.</div></div><div class="card metric"><div class="label">Google</div><div class="value" id="mGoogle">—</div><div class="note">Backend / Docs.</div></div><div class="card metric"><div class="label">BRAPI</div><div class="value" id="mBrapi">—</div><div class="note">Dados externos.</div></div></div>
+      <div class="card" style="margin-top:14px"><h2>1. Entrada de dados B3</h2><div class="dropzone" id="dropzone"><div><div class="big">Solte aqui arquivos da B3, CSV, PDF ou JSON</div><p>A v7.3 captura o máximo de linhas e abas, cria fingerprints, envia ao Google em blocos e só depois faz a leitura analítica. A planilha bruta não é salva no navegador.</p><label class="btn primary">Selecionar arquivos<input id="fileInput2" type="file" accept=".xlsx,.xls,.csv,.pdf,.json" multiple style="display:none" /></label></div></div><div id="importList" class="file-list" style="margin-top:12px"></div></div>
+      <div class="shell"><div class="card"><h2>2. Conversa profunda</h2><p class="muted">Pergunte como no ChatGPT, usando base B3 da sessão, memória Google e dados externos quando disponíveis.</p><div class="grid cols3"><label>Modo IA<select id="aiMode" onchange="saveConfigFromScreen()"><option value="backend">Backend Apps Script</option><option value="openai_direct">OpenAI direto — teste local</option><option value="local">Local heurístico</option></select></label><label>Modelo GPT<input id="openAiModel" value="gpt-4.1-mini" oninput="saveConfigFromScreen()" /></label><label>PIN Backend<input id="backendPin" type="password" value="2026" /></label></div><div id="chatHistory" class="chat-history" style="margin-top:12px"></div><div class="quick"><button onclick="askPreset('Quais são os piores resultados escondidos na minha carteira?')">Pergunta incomum</button><button onclick="askPreset('Onde minha carteira parece boa, mas pode estar enganando?')">Risco invisível</button><button onclick="askPreset('Mostre os 10 ativos que mais pagaram dividendos e diga se isso é saudável.')">Top renda</button><button onclick="askPreset('O que os dados B3 dizem que eu talvez esteja evitando enxergar?')">Leitura desconfortável</button><button onclick="askPreset('Cruze meus dados internos com dados externos e diga quais ativos merecem investigação.')">Interno + externo</button><button onclick="askPreset('Gere um parecer curto, visual e estratégico do mês.')">Parecer visual</button></div><label>Mensagem para IA<textarea id="aiQuestion" placeholder="Ex.: Quais piores resultados escondidos aparecem quando você cruza renda, concentração, ativos sem tese e dados externos?"></textarea></label><div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="primary" onclick="handleAiQuestion()">Perguntar à IA</button><button onclick="consultBrapiForTopAssets()">Buscar BRAPI</button><button onclick="copyPrompt()">Copiar contexto</button><button onclick="saveInsightToGoogle()">Salvar insight no Google</button></div><div id="backendStatus" class="status">Aguardando ação. Na v7.3, o Google recebe blocos brutos deduplicados.</div></div><div class="card"><h2>3. Resultados vivos</h2><p class="muted">A cada pergunta, esta área muda. As respostas são compactas, visuais e baseadas no insight atual.</p><div id="dynamicResults"></div></div></div>
     </section>
 
-    <section id="configQuick">
-      <div class="hero"><div class="quote">Configuração GPT / BRAPI / Google</div><p>APIs ficam apenas no localStorage isolado deste navegador. A base B3 não fica no navegador: vai para o Google Docs via backend.</p></div>
-      <div class="grid cols2" style="margin-top:14px">
-        <div class="card">
-          <h2>GPT / OpenAI</h2>
-          <div class="config-highlight"><strong>API ChatGPT/OpenAI</strong><br><span class="muted">Para produção, o ideal é proteger a chave no backend. Aqui ela fica só neste navegador.</span></div>
-          <div class="grid cols2" style="margin-top:12px">
-            <label>OpenAI API Key<input id="openAiKey" type="password" placeholder="sk-..." /></label>
-            <label>Modelo<input id="openAiModel2" value="gpt-4.1-mini" oninput="saveConfigFromScreen()" /></label>
-            <label>Temperatura<input id="temperature" type="number" min="0" max="1" step="0.1" value="0.2" oninput="saveConfigFromScreen()" /></label>
-            <label>Modo de resposta<select id="answerStyle" onchange="saveConfigFromScreen()"><option value="visual_short">Curto + visual</option><option value="deep">Profundo</option><option value="report">Parecer técnico</option></select></label>
-          </div>
-          <label style="margin-top:12px">System Prompt<textarea id="systemPrompt" oninput="saveConfigFromScreen()"></textarea></label>
-        </div>
-        <div class="card">
-          <h2>BRAPI / Google Backend</h2>
-          <div class="config-highlight"><strong>Dados externos + memória</strong><br><span class="muted">BRAPI enriquece tickers. Apps Script recebe snapshots e insights no Google Docs.</span></div>
-          <div class="grid cols2" style="margin-top:12px">
-            <label>BRAPI Token<input id="brapiToken" type="password" placeholder="token brapi" /></label>
-            <label>Modo BRAPI<select id="brapiMode" onchange="saveConfigFromScreen()"><option value="off">Desligado</option><option value="manual">Manual</option><option value="auto">Automático nas perguntas</option></select></label>
-            <label>Total máximo de tickers BRAPI<input id="brapiLimit" type="number" min="1" max="60" value="20" oninput="saveConfigFromScreen()" /></label><label>Tamanho do lote BRAPI<input id="brapiBatchSize" type="number" min="1" max="10" value="10" oninput="saveConfigFromScreen()" /></label>
-            <label>Backend URL<input id="backendUrl" oninput="saveConfigFromScreen()" /></label>
-          </div>
-          <div class="actions" style="justify-content:flex-start;margin-top:12px">
-            <button class="primary" onclick="saveApiKeysOnlyInBrowser()">Salvar APIs só neste navegador</button>
-            <button class="green" onclick="testBackend()">Testar backend</button>
-            <button class="blue" onclick="consultBrapiForTopAssets()">Testar BRAPI</button>
-            <button class="danger" onclick="clearBrowserApiKeys()">Apagar APIs salvas</button>
-          </div>
-        </div>
-      </div>
-    </section>
+    <section id="configQuick"><div class="hero"><div class="quote">Configuração GPT / BRAPI / Google</div><p>APIs ficam apenas neste navegador. A base B3 vai para o Google em blocos deduplicados.</p></div><div class="grid cols2" style="margin-top:14px"><div class="card"><h2>GPT / OpenAI</h2><div class="config-highlight"><strong>API ChatGPT/OpenAI</strong><br><span class="muted">Para produção, proteja a chave no backend. Aqui ela fica só neste navegador.</span></div><div class="grid cols2" style="margin-top:12px"><label>OpenAI API Key<input id="openAiKey" type="password" placeholder="sk-..." /></label><label>Modelo<input id="openAiModel2" value="gpt-4.1-mini" oninput="saveConfigFromScreen()" /></label><label>Temperatura<input id="temperature" type="number" min="0" max="1" step="0.1" value="0.2" oninput="saveConfigFromScreen()" /></label><label>Modo de resposta<select id="answerStyle" onchange="saveConfigFromScreen()"><option value="visual_short">Curto + visual</option><option value="deep">Profundo</option><option value="report">Parecer técnico</option></select></label></div><label style="margin-top:12px">System Prompt<textarea id="systemPrompt" oninput="saveConfigFromScreen()"></textarea></label></div><div class="card"><h2>BRAPI / Google Backend</h2><div class="config-highlight"><strong>Dados externos + memória</strong><br><span class="muted">BRAPI consulta em lotes de até 10 tickers para evitar limite por requisição.</span></div><div class="grid cols2" style="margin-top:12px"><label>BRAPI Token<input id="brapiToken" type="password" placeholder="token brapi" /></label><label>Modo BRAPI<select id="brapiMode" onchange="saveConfigFromScreen()"><option value="off">Desligado</option><option value="manual">Manual</option><option value="auto">Automático nas perguntas</option></select></label><label>Total máximo BRAPI<input id="brapiLimit" type="number" min="1" max="60" value="20" oninput="saveConfigFromScreen()" /></label><label>Tamanho lote BRAPI<input id="brapiBatchSize" type="number" min="1" max="10" value="10" oninput="saveConfigFromScreen()" /></label><label>Backend URL<input id="backendUrl" oninput="saveConfigFromScreen()" /></label><label>Máx. linhas por bloco Google<input id="googleBlockSize" type="number" min="20" max="500" value="120" oninput="saveConfigFromScreen()" /></label></div><div class="actions" style="justify-content:flex-start;margin-top:12px"><button class="primary" onclick="saveApiKeysOnlyInBrowser()">Salvar APIs só neste navegador</button><button class="green" onclick="testBackend()">Testar backend</button><button class="blue" onclick="consultBrapiForTopAssets()">Testar BRAPI</button><button class="danger" onclick="clearBrowserApiKeys()">Apagar APIs salvas</button></div></div></div></section>
 
-    <section id="dados"><div class="grid cols2"><div class="card"><h2>Arquivos e tipos detectados</h2><div id="typeSummary"></div></div><div class="card"><h2>Google-first / Deduplicação</h2><div id="qualityBox"></div></div></div></section>
+    <section id="dados"><div class="grid cols2"><div class="card"><h2>Arquivos e tipos detectados</h2><div id="typeSummary"></div></div><div class="card"><h2>Força bruta / Deduplicação</h2><div id="qualityBox"></div></div></div><div class="card" style="margin-top:14px"><h2>Amostra bruta capturada</h2><div class="table-wrap"><table id="rawTable"></table></div></div></section>
     <section id="carteira"><div class="card"><h2>Carteira detectada na sessão</h2><div class="table-wrap"><table id="portfolioTable"></table></div></div></section>
-    <section id="jsons"><div class="toolbar"><label>JSON<select id="jsonSelect" onchange="renderJson()"><option value="context">Contexto IA</option><option value="snapshot">Snapshot Google</option><option value="insight">Insight atual</option><option value="brapi">BRAPI</option><option value="state">Sessão completa</option></select></label><button onclick="copyJson()">Copiar JSON</button></div><pre id="jsonBox" class="jsonbox">{}</pre></section>
+    <section id="jsons"><div class="toolbar"><label>JSON<select id="jsonSelect" onchange="renderJson()"><option value="context">Contexto IA</option><option value="snapshot">Snapshot Google</option><option value="rawBlocks">Blocos brutos</option><option value="insight">Insight atual</option><option value="brapi">BRAPI</option><option value="state">Sessão completa</option></select></label><button onclick="copyJson()">Copiar JSON</button></div><pre id="jsonBox" class="jsonbox">{}</pre></section>
   </div>
 
-  <dialog id="configDialog"><form method="dialog" onsubmit="event.preventDefault();saveConfigFromDialog();configDialog.close();"><h2>Configuração GPT / BRAPI / Google</h2><div class="form-grid"><label class="full">OpenAI API Key local<input id="dlgOpenAiKey" type="password" /></label><label>Modelo GPT<input id="dlgOpenAiModel" /></label><label>Temperatura<input id="dlgTemperature" type="number" min="0" max="1" step="0.1" /></label><label>Modo IA<select id="dlgAiMode"><option value="backend">Backend Apps Script</option><option value="openai_direct">OpenAI direto</option><option value="local">Local</option></select></label><label class="full">BRAPI Token<input id="dlgBrapiToken" type="password" /></label><label>Modo BRAPI<select id="dlgBrapiMode"><option value="off">Desligado</option><option value="manual">Manual</option><option value="auto">Automático</option></select></label><label>Total máximo BRAPI<input id="dlgBrapiLimit" type="number" min="1" max="60" /></label><label>Tamanho do lote BRAPI<input id="dlgBrapiBatchSize" type="number" min="1" max="10" /></label><label class="full">Backend URL<input id="dlgBackendUrl" /></label><label class="full">System Prompt<textarea id="dlgSystemPrompt"></textarea></label></div><div class="actions" style="justify-content:flex-start;margin-top:14px"><button class="primary" type="submit">Salvar configuração</button><button type="button" class="green" onclick="saveApiKeysOnlyInBrowser()">Salvar APIs só neste navegador</button><button type="button" onclick="configDialog.close()">Cancelar</button></div></form></dialog>
-
-  <script>
-    const DEFAULT_BACKEND_URL = "https://script.google.com/macros/s/AKfycbzWx8kThrG0L-VAhC-W-RP7Q7KpcYwEEi1_dNM0p6i3859AbAL5Kv_gx6XMaXiRpevJ/exec";
-    const LS_KEYS = "gwi_v7_1_api_keys_browser_only";
-    const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-    const DEFAULT_PROMPT = "Você é o Guido Wealth IA — Versão 7.1. Responda como um ChatGPT financeiro profundo, mas usando os dados B3 do usuário como base central. Use dados BRAPI quando disponíveis e memória do Google quando o backend retornar contexto. Seja curto, visual e estratégico. Separe fatos, riscos, interpretação e missões. Não dê ordem absoluta de compra ou venda; use linguagem de apoio à decisão.";
-
-    let state = initialState();
-
-    function initialState() {
-      return {
-        imports: [], rawSheets: [], assets: {}, positions: [], movements: [], income: [], events: [], performance: [],
-        chat: [], currentInsight: null, brapiData: {}, context: null,
-        backend: { ok: false, docUrl: null, lastPing: null },
-        config: { backendUrl: DEFAULT_BACKEND_URL, aiMode: "backend", openAiKey: "", openAiModel: "gpt-4.1-mini", temperature: 0.2, answerStyle: "visual_short", brapiToken: "", brapiMode: "off", brapiLimit: 20, brapiBatchSize: 10, systemPrompt: DEFAULT_PROMPT }
-      };
-    }
-
-    function money(v) { return BRL.format(Number(v || 0)); }
-    function num(v) {
-      if (v === null || v === undefined || v === "") return 0;
-      if (typeof v === "number") return v;
-      const s = String(v).trim().replace(/R\$\s?/g, "").replace(/\./g, "").replace(",", ".").replace("%", "");
-      const n = Number(s);
-      return Number.isNaN(n) ? 0 : n;
-    }
-    function safe(v) { return String(v ?? "").replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#039;" }[m])); }
-    function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-    function cleanText(s) { return String(s || "").replace(/\\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim(); }
-
-    function loadApiKeysOnlyFromBrowser() {
-      try {
-        const saved = JSON.parse(localStorage.getItem(LS_KEYS) || "{}");
-        state.config.openAiKey = saved.openAiKey || "";
-        state.config.brapiToken = saved.brapiToken || "";
-      } catch (e) {}
-    }
-
-    function saveApiKeysOnlyInBrowser() {
-      const payload = {
-        openAiKey: (document.getElementById("openAiKey")?.value || document.getElementById("dlgOpenAiKey")?.value || state.config.openAiKey || "").trim(),
-        brapiToken: (document.getElementById("brapiToken")?.value || document.getElementById("dlgBrapiToken")?.value || state.config.brapiToken || "").trim()
-      };
-      localStorage.setItem(LS_KEYS, JSON.stringify(payload));
-      loadApiKeysOnlyFromBrowser();
-      renderAll();
-      setStatus("APIs salvas apenas neste navegador. A base B3 continua indo para o Google, não para o navegador.", "ok");
-    }
-
-    function clearBrowserApiKeys() {
-      localStorage.removeItem(LS_KEYS);
-      state.config.openAiKey = "";
-      state.config.brapiToken = "";
-      renderAll();
-      setStatus("APIs apagadas deste navegador.", "ok");
-    }
-
-    function showPanel(id, el) {
-      document.querySelectorAll("section").forEach(s => s.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      if (el) el.classList.add("active");
-      renderAll();
-    }
-
-    document.getElementById("fileInput").addEventListener("change", e => handleFiles(e.target.files));
-    document.getElementById("fileInput2").addEventListener("change", e => handleFiles(e.target.files));
-    ["dragenter", "dragover"].forEach(evt => document.getElementById("dropzone").addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add("drag"); }));
-    ["dragleave", "drop"].forEach(evt => document.getElementById("dropzone").addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove("drag"); }));
-    document.getElementById("dropzone").addEventListener("drop", e => handleFiles(e.dataTransfer.files));
-
-    async function handleFiles(files) {
-      const incoming = Array.from(files || []);
-      if (!incoming.length) return;
-      setStatus("Lendo arquivo e preparando envio ao Google...", "");
-      for (const file of incoming) await parseFile(file);
-      rebuild();
-      renderAll();
-      await syncToGoogleAfterImport();
-    }
-
-    async function parseFile(file) {
-      const ext = file.name.split(".").pop().toLowerCase();
-      if (ext === "json") {
-        const imported = JSON.parse(await file.text());
-        state = Object.assign(initialState(), imported);
-        loadApiKeysOnlyFromBrowser();
-        return;
-      }
-      if (ext === "pdf") {
-        state.imports.push({ id: uid(), fileName: file.name, type: "pdf_recebido", reason: "PDF reservado para extração futura", rowCount: 0, confidence: .5, fingerprint: fingerprintObject(["file", file.name, file.size, file.lastModified, "pdf"]) });
-        return;
-      }
-      const buffer = await file.arrayBuffer();
-      const wb = XLSX.read(buffer, { type: "array", cellDates: true });
-      const sheets = [];
-      wb.SheetNames.forEach(name => {
-        const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: null, raw: false });
-        const obj = sheetToObjects(rows);
-        sheets.push({ name, headers: obj.headers, objects: obj.rows, rows: rows.length });
-      });
-      const detected = detectType(wb.SheetNames, sheets);
-      const totalRows = sheets.reduce((s, x) => s + x.rows, 0);
-      const imp = { id: uid(), fileName: file.name, type: detected.type, reason: detected.reason, rowCount: totalRows, confidence: detected.confidence, fingerprint: fingerprintObject(["file", file.name, file.size, file.lastModified, detected.type, totalRows]) };
-      state.imports.push(imp);
-      state.rawSheets.push({ importId: imp.id, fileName: file.name, type: detected.type, sheets });
-    }
-
-    function sheetToObjects(rows) {
-      let headerIndex = 0;
-      let best = -1;
-      const keys = ["entrada", "saída", "saida", "data", "movimentação", "movimentacao", "produto", "instituição", "instituicao", "quantidade", "preço", "preco", "valor", "código", "codigo", "negociação", "negociacao", "data com", "pagamento", "dy", "categoria", "saldo"];
-      rows.slice(0, 15).forEach((r, i) => {
-        const txt = r.map(x => String(x || "").toLowerCase()).join("|");
-        const score = keys.reduce((s, k) => s + (txt.includes(k) ? 1 : 0), 0);
-        if (score > best) { best = score; headerIndex = i; }
-      });
-      const headers = (rows[headerIndex] || []).map(h => String(h || "").trim().replace(/\s+/g, " "));
-      const data = [];
-      for (let i = headerIndex + 1; i < rows.length; i++) {
-        const r = rows[i];
-        if (!r || r.every(c => c === null || c === "")) continue;
-        const o = {};
-        headers.forEach((h, idx) => { if (h) o[h] = r[idx]; });
-        if (Object.keys(o).length) data.push(o);
-      }
-      return { headers, rows: data };
-    }
-
-    function nk(k) { return String(k || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""); }
-    function val(o, cands) {
-      const map = {};
-      Object.keys(o || {}).forEach(k => map[nk(k)] = o[k]);
-      for (const c of cands) {
-        const v = map[nk(c)];
-        if (v !== undefined && v !== null && v !== "") return v;
-      }
-      return null;
-    }
-
-    function detectType(names, sheets) {
-      const h = sheets.flatMap(s => s.headers).map(nk).join(" ");
-      const n = names.map(nk).join(" ");
-      if (h.includes("entrada_saida") && h.includes("movimentacao")) return { type: "movimentacao_b3", confidence: .97, reason: "Movimentação B3" };
-      if (h.includes("data_com") && h.includes("data_de_pagamento")) return { type: "eventos_b3", confidence: .95, reason: "Calendário de eventos" };
-      if (h.includes("rend_abril") || h.includes("saldo_investido") || h.includes("rent_ult_12_m")) return { type: "performance_b3", confidence: .9, reason: "Relatório Meus Produtos" };
-      if (n.includes("acoes") || n.includes("bdr") || h.includes("codigo_de_negociacao") || h.includes("valor_atualizado")) return { type: "posicao_b3", confidence: .92, reason: "Posição B3" };
-      return { type: "desconhecido", confidence: .2, reason: "Tipo não reconhecido" };
-    }
-
-    function tickerFrom(s) {
-      const text = String(s || "").toUpperCase();
-      const m = text.match(/\b[A-Z]{4}\d{1,2}[A-Z]?\b/);
-      return m ? m[0] : null;
-    }
-    function validTicker(t) { return !!t && !["TOTAL", "SUBTOTAL", "SEM_TICKER", "CARTEIRA"].includes(String(t).toUpperCase()); }
-    function assetClass(t, p = "", aba = "") {
-      const ticker = String(t || "").toUpperCase();
-      const prod = String(p || "").toUpperCase();
-      const sheet = String(aba || "").toUpperCase();
-      if (sheet.includes("BDR") || ticker.endsWith("34")) return "BDR";
-      if (sheet.includes("ETF") || prod.includes(" ETF")) return "ETF";
-      if (sheet.includes("TESOURO")) return "Tesouro Direto";
-      if (sheet.includes("RENDA FIXA") || prod.includes("CDB") || prod.includes("LCI") || prod.includes("LCA")) return "Renda Fixa";
-      if (sheet.includes("FUNDO") || prod.includes("FII") || ticker.endsWith("11")) return "FII";
-      if (sheet.includes("AÇÕES") || sheet.includes("ACOES") || /[3456]$/.test(ticker)) return "Ação";
-      return "Outro";
-    }
-    function addAsset(t, meta) {
-      if (!validTicker(t)) return;
-      if (!state.assets[t]) state.assets[t] = { ticker: t, nome: meta.produto || t, classe: meta.classe || "Outro", fontes: [] };
-      if (meta.fonte && !state.assets[t].fontes.includes(meta.fonte)) state.assets[t].fontes.push(meta.fonte);
-    }
-
-    function rebuild() {
-      state.assets = {}; state.positions = []; state.movements = []; state.income = []; state.events = []; state.performance = [];
-      state.rawSheets.forEach(pkg => {
-        if (pkg.type === "movimentacao_b3") parseMov(pkg);
-        if (pkg.type === "posicao_b3") parsePos(pkg);
-        if (pkg.type === "eventos_b3") parseEvents(pkg);
-        if (pkg.type === "performance_b3") parsePerf(pkg);
-      });
-      buildContext();
-    }
-
-    function parseMov(pkg) {
-      pkg.sheets.forEach(sh => sh.objects.forEach(r => {
-        const produto = val(r, ["Produto", "Ativo"]);
-        const t = tickerFrom(produto);
-        if (!validTicker(t)) return;
-        const mov = String(val(r, ["Movimentação", "Movimentacao"]) || "");
-        const item = { data: val(r, ["Data"]), ticker: t, produto, movimentacao: mov, natureza: classMov(mov), quantidade: num(val(r, ["Quantidade"])), valorUnitario: num(val(r, ["Preço unitário", "Preco unitario"])), valorTotal: num(val(r, ["Valor da Operação", "Valor da Operacao", "Valor"])), instituicao: val(r, ["Instituição", "Instituicao"]), classe: assetClass(t, produto, sh.name) };
-        state.movements.push(item);
-        addAsset(t, { produto, classe: item.classe, fonte: "movimentacao" });
-        if (item.natureza === "provento") state.income.push(item);
-      }));
-    }
-    function classMov(m) {
-      const s = String(m || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      if (s.includes("rendimento") || s.includes("dividendo") || s.includes("juros sobre capital") || s.includes("pagamento de juros")) return "provento";
-      if (s.includes("transferencia")) return "transferencia";
-      if (s.includes("liquidacao") || s.includes("compra") || s.includes("venda")) return "compra_venda";
-      return "outro";
-    }
-    function parsePos(pkg) {
-      pkg.sheets.forEach(sh => sh.objects.forEach(r => {
-        const produto = val(r, ["Produto", "Nome do Produto", "Ativo"]);
-        const t = String(val(r, ["Código de Negociação", "Codigo de Negociacao", "Código", "Codigo", "Ticker"]) || tickerFrom(produto) || "").toUpperCase();
-        if (!validTicker(t)) return;
-        const qtd = num(val(r, ["Quantidade", "Qtd"]));
-        const price = num(val(r, ["Preço de Fechamento", "Preco de Fechamento", "Preço unitário", "Preco unitario"]));
-        const value = num(val(r, ["Valor Atualizado", "Valor bruto", "Valor Líquido", "Valor Liquido", "Saldo Investido", "Valor"]));
-        const c = assetClass(t, produto, sh.name);
-        const pos = { ticker: t, produto, classe: c, instituicao: val(r, ["Instituição", "Instituicao"]), quantidade: qtd, precoFechamento: price, valor: value || qtd * price };
-        if (pos.valor > 0) { state.positions.push(pos); addAsset(t, { produto, classe: c, fonte: "posicao" }); }
-      }));
-    }
-    function parseEvents(pkg) {
-      pkg.sheets.forEach(sh => sh.objects.forEach(r => {
-        const produto = val(r, ["Produto", "Ativo"]);
-        const t = tickerFrom(produto);
-        if (!validTicker(t)) return;
-        state.events.push({ ticker: t, produto, classe: assetClass(t, produto, sh.name), evento: val(r, ["Tipo de Evento", "Tipo", "Evento"]), dataCom: val(r, ["Data COM", "Data Com"]), pagamento: val(r, ["Data de Pagamento", "Pagamento"]), valorUnitario: num(val(r, ["Preço Unitário Bruto", "Valor Unitário", "Valor Unitario"])), dy: num(val(r, ["DY", "Dividend Yield"])) });
-        addAsset(t, { produto, classe: assetClass(t, produto, sh.name), fonte: "eventos" });
-      }));
-    }
-    function parsePerf(pkg) {
-      pkg.sheets.forEach(sh => sh.objects.forEach(r => {
-        const produto = val(r, ["Produto", "Ativo"]);
-        const t = tickerFrom(produto);
-        if (!validTicker(t)) return;
-        state.performance.push({ ticker: t, produto, categoria: val(r, ["Categoria"]), saldo: num(val(r, ["Saldo Investido", "Saldo Investido (R$)"])), rendAno: num(val(r, ["Rend. 2026 (R$)", "Rend. Ano (R$)"])), rentAno: num(val(r, ["Rent. 2026 (%)", "Rent. Ano (%)"])) });
-      }));
-    }
-
-    function sumBy(arr, k, v) {
-      const out = {};
-      arr.forEach(x => { const key = x[k] || "Outro"; out[key] = (out[key] || 0) + Number(x[v] || 0); });
-      return out;
-    }
-    function buildContext() {
-      const total = state.positions.reduce((s, p) => s + p.valor, 0);
-      state.positions.forEach(p => p.percentual = total ? p.valor / total * 100 : 0);
-      const incomeTotal = state.income.reduce((s, p) => s + p.valorTotal, 0);
-      const incomeBy = Object.entries(sumBy(state.income, "ticker", "valorTotal")).sort((a, b) => b[1] - a[1]);
-      const topPos = [...state.positions].sort((a, b) => b.valor - a.valor).slice(0, 12);
-      const classes = sumBy(state.positions, "classe", "valor");
-      state.context = { geradoEm: new Date().toISOString(), resumo: { valorTotal: total, numeroAtivos: Object.keys(state.assets).length, rendaRecebida: incomeTotal, classes, maioresPosicoes: topPos, maioresPagadores: incomeBy.slice(0, 12).map(([ticker, valor]) => ({ ticker, valor })) }, indices: calcIndices(total, incomeTotal, incomeBy, topPos), brapi: state.brapiData };
-    }
-    function calcIndices(total, incomeTotal, incomeBy, topPos) {
-      const top = n => total ? topPos.slice(0, n).reduce((s, p) => s + p.valor, 0) / total * 100 : 0;
-      const topR = n => incomeTotal ? incomeBy.slice(0, n).reduce((s, p) => s + p[1], 0) / incomeTotal * 100 : 0;
-      const robustez = Math.max(0, Math.min(100, 100 - top(5) * .45 - topR(5) * .25));
-      return { top1: top(1), top5: top(5), top10: top(10), top3Renda: topR(3), top5Renda: topR(5), robustez };
-    }
-
-    function fingerprintObject(parts) {
-      const str = parts.map(x => String(x ?? "").trim()).join("|");
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
-      return Math.abs(hash).toString(36);
-    }
-    function buildFingerprints() {
-      return {
-        imports: state.imports.map(i => i.fingerprint).filter(Boolean),
-        positions: state.positions.map(p => fingerprintObject(["pos", p.ticker, p.classe, p.quantidade, p.valor, p.instituicao])),
-        movements: state.movements.map(m => fingerprintObject(["mov", m.data, m.ticker, m.movimentacao, m.quantidade, m.valorTotal, m.instituicao])),
-        income: state.income.map(i => fingerprintObject(["inc", i.data, i.ticker, i.movimentacao, i.valorTotal, i.instituicao])),
-        events: state.events.map(e => fingerprintObject(["evt", e.ticker, e.evento, e.dataCom, e.pagamento, e.valorUnitario]))
-      };
-    }
-    function makeGoogleSnapshot() {
-      return { version: "GWI_V7_1_GOOGLE_FIRST", createdAt: new Date().toISOString(), imports: state.imports, assets: state.assets, positions: state.positions, movements: state.movements, income: state.income, events: state.events, performance: state.performance, context: state.context, brapiData: slimBrapiDataForGoogle(state.brapiData || {}), fingerprints: buildFingerprints() };
-    }
-    function slimBrapiDataForGoogle(data) {
-      if (!data || !data.raw) return data || {};
-      const results = data.raw.results || data.raw.stocks || [];
-      return { updatedAt: data.updatedAt, tickers: data.tickers || [], raw: { results: (Array.isArray(results) ? results : []).slice(0, 50).map(r => ({ symbol: r.symbol, shortName: r.shortName, longName: r.longName, regularMarketPrice: r.regularMarketPrice, regularMarketChangePercent: r.regularMarketChangePercent, marketCap: r.marketCap, dividendYield: r.dividendYield, sector: r.sector, industry: r.industry })) } };
-    }
-
-    async function testBackend() {
-      try {
-        setStatus("Testando backend Google...", "");
-        const data = await jsonpRequest({ action: "ping" });
-        if (!data.ok) throw new Error(data.error || "Backend retornou erro");
-        state.backend.ok = true; state.backend.docUrl = data.docUrl || null; state.backend.lastPing = new Date().toISOString();
-        setStatus("Backend Google ativo. Documento conectado.", "ok");
-        renderAll();
-      } catch (e) { setStatus("Erro no backend: " + e.message, "err"); }
-    }
-    function jsonpRequest(params) {
-      return new Promise((resolve, reject) => {
-        const cb = "gwi_v7_1_" + Date.now() + "_" + Math.floor(Math.random() * 999999);
-        params.callback = cb;
-        const url = new URL(state.config.backendUrl);
-        Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-        const script = document.createElement("script");
-        script.src = url.toString();
-        const timeout = setTimeout(() => { cleanup(); reject(new Error("Tempo esgotado no backend")); }, 20000);
-        function cleanup() { clearTimeout(timeout); delete window[cb]; if (script.parentNode) script.parentNode.removeChild(script); }
-        window[cb] = data => { cleanup(); resolve(data); };
-        script.onerror = () => { cleanup(); reject(new Error("Falha JSONP")); };
-        document.body.appendChild(script);
-      });
-    }
-    async function readGoogleMemorySafe() { try { return await jsonpRequest({ action: "read" }); } catch (e) { return null; } }
-    function analyzeGoogleDedup(previous) {
-      const current = buildFingerprints();
-      const entries = (((previous || {}).data || {}).entries || []);
-      const joined = entries.map(e => String(e.text || "")).join("\n");
-      const currentImports = current.imports || [];
-      return { importAlreadySeen: currentImports.length > 0 && currentImports.every(fp => joined.includes(fp)), repeatedMovements: (current.movements || []).filter(fp => joined.includes(fp)).length, repeatedIncome: (current.income || []).filter(fp => joined.includes(fp)).length, currentImportFingerprints: currentImports };
-    }
-    async function syncToGoogleAfterImport() {
-      try {
-        setStatus("Verificando duplicidade e enviando base processada ao Google...", "");
-        const previous = await readGoogleMemorySafe();
-        const dedupe = analyzeGoogleDedup(previous);
-        if (dedupe.importAlreadySeen) { setStatus("Arquivo já capturado anteriormente no Google. Dados repetidos não foram reenviados.", "ok"); return; }
-        const snapshot = makeGoogleSnapshot();
-        const payload = { action: "save_memory", pin: document.getElementById("backendPin")?.value || "2026", author: "Guido Wealth Intelligence v7.1", text: "GWI_V7_1_IMPORT_SNAPSHOT\n" + JSON.stringify({ fingerprintSet: snapshot.fingerprints, imports: snapshot.imports, resumo: snapshot.context?.resumo || {}, indices: snapshot.context?.indices || {}, dedupe }, null, 2), bundle: snapshot };
-        const r = await fetch(state.config.backendUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
-        const data = JSON.parse(await r.text());
-        if (!data.ok) throw new Error(data.error || "Erro ao salvar no Google");
-        state.backend.ok = true; state.backend.docUrl = data.docUrl || state.backend.docUrl; state.backend.lastPing = new Date().toISOString();
-        setStatus("Base processada enviada ao Google. Navegador limpo: nada da B3 foi salvo no localStorage.", "ok");
-        renderAll();
-      } catch (e) { setStatus("Arquivo processado na sessão, mas envio ao Google falhou: " + e.message, "err"); }
-    }
-
-    async function handleAiQuestion() {
-      const q = (document.getElementById("aiQuestion").value || "").trim();
-      if (!q) return;
-      state.chat.push({ role: "user", text: q, at: new Date().toISOString() });
-      state.currentInsight = thinking(q);
-      renderAll();
-      setStatus("Pensando, cruzando dados internos e externos...", "");
-      let answer = "";
-      try {
-        if (state.config.brapiMode === "auto") await maybeBrapi(q);
-        if (state.config.aiMode === "openai_direct") answer = await askOpenAI(q);
-        else if (state.config.aiMode === "backend") answer = await askBackend(q);
-        else answer = localAnswer(q);
-        setStatus("Resposta construída.", "ok");
-      } catch (e) { answer = localAnswer(q) + "\n\nObservação: " + e.message; setStatus("Fallback local: " + e.message, "err"); }
-      answer = compact(answer);
-      const insight = buildInsight(q, answer);
-      state.currentInsight = insight;
-      state.chat.push({ role: "assistant", text: answer, at: new Date().toISOString(), insightId: insight.id });
-      document.getElementById("aiQuestion").value = "";
-      renderAll();
-    }
-    function thinking(q) { return { intent: "thinking", question: q, title: "Pensando...", summary: "Construindo resposta visual" }; }
-    function compact(s) { const text = cleanText(s); return text.length < 900 ? text : text.split("\n").filter(Boolean).slice(0, 8).join("\n") + "\n\n[resposta compactada para leitura visual]"; }
-    function getIntent(q) {
-      const s = q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      if (s.includes("pior") || s.includes("escondid") || s.includes("engan")) return "hidden_risks";
-      if (s.includes("dividendo") || s.includes("renda") || s.includes("pagaram")) return "income";
-      if (s.includes("concentr")) return "concentration";
-      if (s.includes("extern") || s.includes("brapi") || s.includes("investig")) return "external";
-      if (s.includes("parecer")) return "report";
-      return "general";
-    }
-    function buildInsight(q, answer) {
-      const it = getIntent(q);
-      const c = state.context || {};
-      const idx = c.indices || {};
-      const total = c.resumo?.valorTotal || 0;
-      const renda = c.resumo?.rendaRecebida || 0;
-      const topIncome = c.resumo?.maioresPagadores || [];
-      const topPos = (c.resumo?.maioresPosicoes || []).slice(0, 10).map(p => ({ ticker: p.ticker, valor: p.valor, percentual: p.percentual, classe: p.classe }));
-      let title = "Diagnóstico visual";
-      let charts = [];
-      let warnings = [];
-      let missions = ["Revisar concentração antes de novo aporte."];
-      let next = ["Qual risco invisível devo investigar?", "Quais dados externos mudam a leitura?"];
-      if (it === "hidden_risks") { title = "Piores resultados ocultos"; charts = [{ title: "Maiores exposições", data: topPos, labelKey: "ticker", valueKey: "percentual", format: "percent" }]; warnings = ["A pior informação pode ser concentração, ausência de tese ou renda dependente de poucos ativos."]; missions = ["Investigar top 5 posições e top 5 pagadores.", "Comparar renda recebida com retorno total."]; }
-      if (it === "income") { title = "Renda recebida — visão crítica"; charts = [{ title: "Top pagadores de renda", data: topIncome, labelKey: "ticker", valueKey: "valor", format: "money" }]; warnings = ["Renda alta pode esconder concentração ou evento não recorrente."]; missions = ["Separar renda recorrente de renda extraordinária."]; }
-      if (it === "concentration") { title = "Concentração patrimonial"; charts = [{ title: "Top posições por % da carteira", data: topPos, labelKey: "ticker", valueKey: "percentual", format: "percent" }]; warnings = ["Top 5 alto reduz margem de erro."]; }
-      if (it === "external") { title = "Dados internos + externos"; charts = [{ title: "Ativos para investigação externa", data: topPos, labelKey: "ticker", valueKey: "valor", format: "money" }]; warnings = ["BRAPI ajuda com dados de mercado, mas a decisão depende da tese patrimonial."]; missions = ["Buscar BRAPI dos principais tickers."]; }
-      return { id: uid(), createdAt: new Date().toISOString(), question: q, intent: it, title, summary: answer, metrics: [{ label: "Valor detectado", value: money(total) }, { label: "Renda recebida", value: money(renda) }, { label: "Robustez", value: (idx.robustez || 0).toFixed(0) + "/100" }], charts, warnings, missions, nextQuestions: next };
-    }
-    function localAnswer(q) {
-      const c = state.context || {};
-      const idx = c.indices || {};
-      const top = (c.resumo?.maioresPosicoes || []).slice(0, 5).map(p => p.ticker).join(", ") || "sem posições";
-      const pay = (c.resumo?.maioresPagadores || []).slice(0, 5).map(p => p.ticker).join(", ") || "sem renda";
-      return "Leitura curta:\n\nValor detectado: " + money(c.resumo?.valorTotal || 0) + ".\nRenda recebida: " + money(c.resumo?.rendaRecebida || 0) + ".\nRobustez: " + (idx.robustez || 0).toFixed(0) + "/100.\nTop posições: " + top + ".\nTop pagadores: " + pay + ".\n\nResposta à pergunta: " + q + "\n\nMissão: investigar se os maiores pagadores também preservam patrimônio e se as maiores posições têm tese clara.";
-    }
-    async function askBackend(question) {
-      const payload = { action: "ask", pin: document.getElementById("backendPin")?.value || "2026", question, source: "gwi_v7_1", bundle: state.context, brapi: state.brapiData, style: state.config.answerStyle };
-      const r = await fetch(state.config.backendUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
-      const data = JSON.parse(await r.text());
-      if (!data.ok) throw new Error(data.error || "Erro no backend");
-      state.backend.ok = true; state.backend.docUrl = data.docUrl || state.backend.docUrl;
-      return data.answer || data.message || "Backend respondeu sem texto.";
-    }
-    async function askOpenAI(question) {
-      if (!state.config.openAiKey) throw new Error("API OpenAI não configurada.");
-      const payload = { model: state.config.openAiModel, temperature: Number(state.config.temperature || 0.2), messages: [{ role: "system", content: state.config.systemPrompt }, { role: "user", content: "Pergunta: " + question + "\n\nDADOS INTERNOS B3:\n" + JSON.stringify(state.context, null, 2) + "\n\nDADOS BRAPI:\n" + JSON.stringify(state.brapiData, null, 2) }] };
-      const r = await fetch("https://api.openai.com/v1/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + state.config.openAiKey }, body: JSON.stringify(payload) });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error?.message || "Erro OpenAI");
-      return data.choices?.[0]?.message?.content || "OpenAI respondeu sem texto.";
-    }
-
-    function extractTickers(q) {
-      const typed = String(q).toUpperCase().match(/\b[A-Z]{4}\d{1,2}[A-Z]?\b/g) || [];
-      const top = [...state.positions].sort((a, b) => b.valor - a.valor).slice(0, Number(state.config.brapiLimit || 12)).map(p => p.ticker);
-      return [...new Set([...typed, ...top])].filter(validTicker);
-    }
-    async function maybeBrapi(q) { const tickers = extractTickers(q).slice(0, Number(state.config.brapiLimit || 12)); if (tickers.length) await fetchBrapi(tickers); }
-    async async function fetchBrapi(tickers) {
-      if (!state.config.brapiToken) throw new Error("Token BRAPI não configurado.");
-
-      const uniqueTickers = [...new Set((tickers || []).filter(validTicker))].slice(0, Number(state.config.brapiLimit || 20));
-      const batchSize = Math.max(1, Math.min(10, Number(state.config.brapiBatchSize || 10)));
-      const batches = chunkArray(uniqueTickers, batchSize);
-      const allResults = [];
-      const errors = [];
-
-      for (let i = 0; i < batches.length; i++) {
-        const batch = batches[i];
-        try {
-          setStatus("BRAPI: buscando lote " + (i + 1) + "/" + batches.length + " — " + batch.join(", "), "");
-          const url = "https://brapi.dev/api/quote/" + encodeURIComponent(batch.join(",")) + "?modules=summaryProfile,financialData,defaultKeyStatistics&token=" + encodeURIComponent(state.config.brapiToken);
-          const r = await fetch(url);
-          const data = await r.json();
-          if (!r.ok) throw new Error(data.message || "Erro BRAPI");
-          const results = data.results || data.stocks || [];
-          if (Array.isArray(results)) allResults.push(...results);
-          await sleep(350);
-        } catch (err) {
-          errors.push({ batch, message: err.message });
-        }
-      }
-
-      state.brapiData = {
-        updatedAt: new Date().toISOString(),
-        tickers: uniqueTickers,
-        batchSize,
-        batches: batches.length,
-        errors,
-        raw: { results: allResults }
-      };
-      buildContext();
-
-      if (errors.length && allResults.length) {
-        setStatus("BRAPI parcialmente atualizada: " + allResults.length + " ativos lidos; " + errors.length + " lote(s) falharam.", "err");
-      } else if (errors.length && !allResults.length) {
-        throw new Error(errors.map(e => e.message).join(" | "));
-      }
-      return state.brapiData;
-    }
-
-    function chunkArray(arr, size) {
-      const out = [];
-      for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-      return out;
-    }
-
-    function sleep(ms) {
-      return new Promise(resolve => setTimeout(resolve, ms));
-    }
-    async function consultBrapiForTopAssets() {
-      try { setStatus("Buscando dados BRAPI...", ""); const tickers = extractTickers(document.getElementById("aiQuestion")?.value || ""); await fetchBrapi(tickers); setStatus("BRAPI atualizado em lotes: " + ((state.brapiData.raw?.results || []).length) + " ativo(s) lidos.", "ok"); renderAll(); }
-      catch (e) { setStatus("Erro BRAPI: " + e.message, "err"); }
-    }
-
-    function renderAll() { renderMetrics(); renderImport(); renderChat(); renderInsight(); renderConfig(); renderTables(); renderJson(); }
-    function renderMetrics() {
-      document.getElementById("mFiles").textContent = state.imports.length;
-      document.getElementById("mAssets").textContent = Object.keys(state.assets).length;
-      document.getElementById("mValue").textContent = money(state.context?.resumo?.valorTotal || 0);
-      document.getElementById("mGoogle").textContent = state.backend.ok ? "OK" : "—";
-      const brapiCount = state.brapiData?.raw?.results?.length || 0;
-      document.getElementById("mBrapi").textContent = brapiCount ? brapiCount : (state.config.brapiToken ? "ON" : "—");
-    }
-    function renderImport() {
-      document.getElementById("importList").innerHTML = state.imports.length
-        ? state.imports.map(i => "<div class='file-item'><div><strong>" + safe(i.fileName) + "</strong><br><small>" + safe(i.type) + " • " + (i.rowCount || 0) + " linhas • " + safe(i.reason) + "<br>Fingerprint: " + safe(i.fingerprint || "") + "</small></div><span class='pill info'>" + safe(i.type) + "</span></div>").join("")
-        : "<div class='alert info'>Nenhum arquivo importado ainda.</div><div class='alert purple'><strong>Versão 7.1:</strong> os arquivos são processados na sessão e enviados ao Google. A base B3 não é gravada no localStorage.</div>";
-      const counts = {};
-      state.imports.forEach(i => counts[i.type] = (counts[i.type] || 0) + 1);
-      document.getElementById("typeSummary").innerHTML = Object.entries(counts).map(([k, v]) => "<div class='alert ok'><strong>" + safe(k) + "</strong>: " + v + "</div>").join("") || "<div class='alert info'>Aguardando dados.</div>";
-      document.getElementById("qualityBox").innerHTML = "<div class='alert info'>Ativos válidos: " + Object.keys(state.assets).length + "<br>Linhas sem ticker são ignoradas nos cálculos principais.<br>Google-first: base B3 não persistida no navegador.<br>BRAPI: " + (state.brapiData?.updatedAt ? "atualizado em " + state.brapiData.updatedAt + " — " + ((state.brapiData.raw?.results || []).length) + " ativo(s) lidos" : "sem dados externos") + "</div>";
-    }
-    function renderChat() {
-      const base = "<div class='chat-msg assistant'><strong>Guido Wealth IA v7.1</strong><p>Pronto para cruzar B3, memória Google, GPT e BRAPI. Faça perguntas incomuns e estratégicas.</p></div>";
-      document.getElementById("chatHistory").innerHTML = base + (state.chat || []).map(m => "<div class='chat-msg " + m.role + "'><strong>" + (m.role === "user" ? "Você" : "Guido Wealth IA") + "</strong><p>" + safe(cleanText(m.text)) + "</p></div>").join("");
-      document.getElementById("chatHistory").scrollTop = document.getElementById("chatHistory").scrollHeight;
-    }
-    function renderInsight() {
-      const ins = state.currentInsight;
-      if (!ins) { document.getElementById("dynamicResults").innerHTML = "<div class='alert info'>Faça uma pergunta para gerar cards, gráficos e missões.</div>"; return; }
-      if (ins.intent === "thinking") {
-        document.getElementById("dynamicResults").innerHTML = "<div class='thinking-panel'><div class='thinking-header'><span class='pulse-orb'></span><span>Pensando e montando visualizações...</span></div><div class='thinking-bar'><span></span></div><div class='thinking-steps'><div class='thinking-step active'><span>1. Pergunta</span><strong>" + safe(ins.question.slice(0, 42)) + "</strong></div><div class='thinking-step active'><span>2. Dados B3</span><strong>" + Object.keys(state.assets).length + " ativos</strong></div><div class='thinking-step active'><span>3. Google</span><strong>" + (state.backend.ok ? "conectado" : "pendente") + "</strong></div><div class='thinking-step'><span>4. Visual</span><strong>criando</strong></div></div></div>";
-        return;
-      }
-      document.getElementById("dynamicResults").innerHTML = "<h2>" + safe(ins.title) + "</h2><div class='visual-answer'><strong>Resposta curta</strong><br>" + safe(cleanText(ins.summary)) + "</div><div class='grid cols3' style='margin-top:12px'>" + ins.metrics.map(m => "<div class='impact-card'><div class='big-number'>" + safe(m.value) + "</div><div class='caption'>" + safe(m.label) + "</div></div>").join("") + "</div>" + ins.charts.map(renderChart).join("") + ins.warnings.map(w => "<div class='alert warn'><strong>Alerta:</strong> " + safe(w) + "</div>").join("") + "<h3>Missões</h3>" + ins.missions.map(m => "<div class='alert purple'>" + safe(m) + "</div>").join("") + "<div class='quick'>" + ins.nextQuestions.map(q => "<button onclick=\"askPreset('" + safe(q).replace(/'/g, "&#039;") + "')\">" + safe(q) + "</button>").join("") + "</div>";
-    }
-    function renderChart(ch) {
-      const max = Math.max(...(ch.data || []).map(x => Number(x[ch.valueKey] || 0)), 1);
-      return "<div class='card' style='box-shadow:none;margin-top:12px'><h3>" + safe(ch.title) + "</h3>" + (ch.data || []).map(x => {
-        const v = Number(x[ch.valueKey] || 0);
-        const w = Math.max(6, Math.min(100, v / max * 100));
-        const show = ch.format === "money" ? money(v) : ch.format === "percent" ? v.toFixed(1) + "%" : v;
-        return "<div class='chart-line'><span>" + safe(x[ch.labelKey]) + "</span><div class='bar-wrap'><div class='bar' style='width:" + w + "%'></div></div><strong>" + show + "</strong></div>";
-      }).join("") + "<div class='sparkline'>" + (ch.data || []).slice(0, 16).map(x => {
-        const v = Number(x[ch.valueKey] || 0);
-        return "<span style='height:" + Math.max(8, Math.min(100, v / max * 100)) + "%'></span>";
-      }).join("") + "</div></div>";
-    }
-    function renderConfig() {
-      loadApiKeysOnlyFromBrowser();
-      document.getElementById("openAiKey").value = state.config.openAiKey ? "••••••••••••••••" : "";
-      document.getElementById("openAiModel").value = state.config.openAiModel;
-      document.getElementById("openAiModel2").value = state.config.openAiModel;
-      document.getElementById("temperature").value = state.config.temperature;
-      document.getElementById("answerStyle").value = state.config.answerStyle;
-      document.getElementById("brapiToken").value = state.config.brapiToken ? "••••••••••••••••" : "";
-      document.getElementById("brapiMode").value = state.config.brapiMode;
-      document.getElementById("brapiLimit").value = state.config.brapiLimit;
-      if (document.getElementById("brapiBatchSize")) document.getElementById("brapiBatchSize").value = state.config.brapiBatchSize || 10;
-      document.getElementById("backendUrl").value = state.config.backendUrl;
-      document.getElementById("systemPrompt").value = state.config.systemPrompt;
-      document.getElementById("aiMode").value = state.config.aiMode;
-    }
-    function renderTables() {
-      document.getElementById("portfolioTable").innerHTML = "<thead><tr><th>Ticker</th><th>Classe</th><th>Valor</th><th>%</th><th>Produto</th></tr></thead><tbody>" + [...state.positions].sort((a, b) => b.valor - a.valor).slice(0, 500).map(p => "<tr><td>" + safe(p.ticker) + "</td><td>" + safe(p.classe) + "</td><td>" + money(p.valor) + "</td><td>" + (p.percentual || 0).toFixed(2) + "%</td><td>" + safe(p.produto) + "</td></tr>").join("") + "</tbody>";
-    }
-    function renderJson() {
-      const key = document.getElementById("jsonSelect")?.value || "context";
-      const data = { context: state.context, snapshot: makeGoogleSnapshot(), insight: state.currentInsight, brapi: state.brapiData, state }[key] || state;
-      document.getElementById("jsonBox").textContent = JSON.stringify(data, null, 2);
-    }
-
-    function askPreset(q) { document.getElementById("aiQuestion").value = q; handleAiQuestion(); }
-    function setStatus(msg, type) { const el = document.getElementById("backendStatus"); el.textContent = msg; el.className = "status" + (type ? " " + type : ""); }
-    function saveConfigFromScreen() {
-      state.config.openAiModel = document.getElementById("openAiModel")?.value || document.getElementById("openAiModel2")?.value || state.config.openAiModel;
-      state.config.temperature = Number(document.getElementById("temperature")?.value || state.config.temperature || 0.2);
-      state.config.answerStyle = document.getElementById("answerStyle")?.value || state.config.answerStyle;
-      state.config.brapiMode = document.getElementById("brapiMode")?.value || state.config.brapiMode;
-      state.config.brapiLimit = Number(document.getElementById("brapiLimit")?.value || state.config.brapiLimit || 20);
-      state.config.brapiBatchSize = Math.max(1, Math.min(10, Number(document.getElementById("brapiBatchSize")?.value || state.config.brapiBatchSize || 10)));
-      state.config.backendUrl = document.getElementById("backendUrl")?.value || state.config.backendUrl;
-      state.config.aiMode = document.getElementById("aiMode")?.value || state.config.aiMode;
-      state.config.systemPrompt = document.getElementById("systemPrompt")?.value || state.config.systemPrompt;
-      renderMetrics();
-    }
-    function openConfigDialog() {
-      loadApiKeysOnlyFromBrowser();
-      document.getElementById("dlgOpenAiKey").value = "";
-      document.getElementById("dlgOpenAiKey").placeholder = state.config.openAiKey ? "API GPT já salva neste navegador" : "Cole aqui sua OpenAI API Key";
-      document.getElementById("dlgOpenAiModel").value = state.config.openAiModel;
-      document.getElementById("dlgTemperature").value = state.config.temperature;
-      document.getElementById("dlgAiMode").value = state.config.aiMode;
-      document.getElementById("dlgBrapiToken").value = "";
-      document.getElementById("dlgBrapiToken").placeholder = state.config.brapiToken ? "Token BRAPI já salvo neste navegador" : "Cole aqui seu token BRAPI";
-      document.getElementById("dlgBrapiMode").value = state.config.brapiMode;
-      document.getElementById("dlgBrapiLimit").value = state.config.brapiLimit;
-      document.getElementById("dlgBrapiBatchSize").value = state.config.brapiBatchSize || 10;
-      document.getElementById("dlgBackendUrl").value = state.config.backendUrl;
-      document.getElementById("dlgSystemPrompt").value = state.config.systemPrompt;
-      document.getElementById("configDialog").showModal();
-    }
-    function saveConfigFromDialog() {
-      state.config.openAiModel = document.getElementById("dlgOpenAiModel").value || state.config.openAiModel;
-      state.config.temperature = Number(document.getElementById("dlgTemperature").value || state.config.temperature || 0.2);
-      state.config.aiMode = document.getElementById("dlgAiMode").value || state.config.aiMode;
-      state.config.brapiMode = document.getElementById("dlgBrapiMode").value || state.config.brapiMode;
-      state.config.brapiLimit = Number(document.getElementById("dlgBrapiLimit").value || state.config.brapiLimit || 20);
-      state.config.brapiBatchSize = Math.max(1, Math.min(10, Number(document.getElementById("dlgBrapiBatchSize").value || state.config.brapiBatchSize || 10)));
-      state.config.backendUrl = document.getElementById("dlgBackendUrl").value || state.config.backendUrl;
-      state.config.systemPrompt = document.getElementById("dlgSystemPrompt").value || state.config.systemPrompt;
-      saveApiKeysOnlyInBrowser();
-    }
-    function copyPrompt() { navigator.clipboard.writeText(state.config.systemPrompt + "\n\nDADOS B3:\n" + JSON.stringify(state.context, null, 2) + "\n\nBRAPI:\n" + JSON.stringify(state.brapiData, null, 2)); alert("Contexto copiado."); }
-    function exportSessionJson() { const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "gwi-v7-1-sessao.json"; a.click(); URL.revokeObjectURL(a.href); }
-    function clearSession() { if (confirm("Limpar apenas a sessão atual? Os dados enviados ao Google permanecem no Google Docs.")) { const keepConfig = state.config; const keepBackend = state.backend; state = initialState(); state.config = keepConfig; state.backend = keepBackend; loadApiKeysOnlyFromBrowser(); buildContext(); renderAll(); setStatus("Sessão local limpa. A memória do Google não foi apagada.", "ok"); } }
-    async function saveInsightToGoogle() {
-      if (!state.currentInsight) return alert("Gere um insight primeiro.");
-      try {
-        const payload = { action: "save_memory", pin: document.getElementById("backendPin")?.value || "2026", author: "Guido Wealth Intelligence v7.1", text: "GWI_V7_1_INSIGHT\n" + JSON.stringify(state.currentInsight, null, 2), bundle: { insight: state.currentInsight, context: state.context } };
-        const r = await fetch(state.config.backendUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
-        const data = JSON.parse(await r.text());
-        if (!data.ok) throw new Error(data.error || "Erro ao salvar insight");
-        setStatus("Insight salvo no Google Docs, não no navegador.", "ok");
-      } catch (e) { setStatus("Erro ao salvar insight no Google: " + e.message, "err"); }
-    }
-    function copyJson() { navigator.clipboard.writeText(document.getElementById("jsonBox").textContent); alert("JSON copiado."); }
-
-    loadApiKeysOnlyFromBrowser();
-    buildContext();
-    renderAll();
-  </script>
+<script>
+const DEFAULT_BACKEND_URL="https://script.google.com/macros/s/AKfycbzWx8kThrG0L-VAhC-W-RP7Q7KpcYwEEi1_dNM0p6i3859AbAL5Kv_gx6XMaXiRpevJ/exec";
+const LS_KEYS="gwi_v7_3_api_keys_browser_only";
+const BRL=new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
+const DEFAULT_PROMPT="Você é o Guido Wealth IA — Versão 7.3. Responda como um ChatGPT financeiro profundo, usando dados B3 brutos, contexto analítico, memória Google e BRAPI quando disponíveis. Seja curto, visual e estratégico. Separe fatos, riscos, interpretação e missões. Não dê ordem absoluta de compra ou venda.";
+let state=initialState();
+function initialState(){return{imports:[],rawSheets:[],rawRows:[],rawBlocks:[],assets:{},positions:[],movements:[],income:[],events:[],performance:[],chat:[],currentInsight:null,brapiData:{},context:null,backend:{ok:false,docUrl:null,lastPing:null},syncReport:null,config:{backendUrl:DEFAULT_BACKEND_URL,aiMode:"backend",openAiKey:"",openAiModel:"gpt-4.1-mini",temperature:0.2,answerStyle:"visual_short",brapiToken:"",brapiMode:"off",brapiLimit:20,brapiBatchSize:10,googleBlockSize:120,systemPrompt:DEFAULT_PROMPT}}}
+function money(v){return BRL.format(Number(v||0))}function num(v){if(v===null||v===undefined||v==="")return 0;if(typeof v==="number")return v;const s=String(v).trim().replace(/R\$\s?/g,"").replace(/\./g,"").replace(",",".").replace("%","");const n=Number(s);return Number.isNaN(n)?0:n}function safe(v){return String(v??"").replace(/[&<>"']/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]})}function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}function cleanText(s){return String(s||"").replace(/\\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim()}
+function loadApiKeysOnlyFromBrowser(){try{const saved=JSON.parse(localStorage.getItem(LS_KEYS)||"{}");state.config.openAiKey=saved.openAiKey||"";state.config.brapiToken=saved.brapiToken||""}catch(e){}}
+function saveApiKeysOnlyInBrowser(){const payload={openAiKey:(document.getElementById("openAiKey")?.value||state.config.openAiKey||"").trim(),brapiToken:(document.getElementById("brapiToken")?.value||state.config.brapiToken||"").trim()};localStorage.setItem(LS_KEYS,JSON.stringify(payload));loadApiKeysOnlyFromBrowser();renderAll();setStatus("APIs salvas apenas neste navegador. A base B3 continua indo para o Google.","ok")}
+function clearBrowserApiKeys(){localStorage.removeItem(LS_KEYS);state.config.openAiKey="";state.config.brapiToken="";renderAll();setStatus("APIs apagadas deste navegador.","ok")}
+function showPanel(id,el){document.querySelectorAll("section").forEach(function(s){s.classList.remove("active")});document.getElementById(id).classList.add("active");document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active")});if(el)el.classList.add("active");renderAll()}
+document.getElementById("fileInput").addEventListener("change",function(e){handleFiles(e.target.files)});document.getElementById("fileInput2").addEventListener("change",function(e){handleFiles(e.target.files)});["dragenter","dragover"].forEach(function(evt){document.getElementById("dropzone").addEventListener(evt,function(e){e.preventDefault();document.getElementById("dropzone").classList.add("drag")})});["dragleave","drop"].forEach(function(evt){document.getElementById("dropzone").addEventListener(evt,function(e){e.preventDefault();document.getElementById("dropzone").classList.remove("drag")})});document.getElementById("dropzone").addEventListener("drop",function(e){handleFiles(e.dataTransfer.files)});
+async function handleFiles(files){const incoming=Array.from(files||[]);if(!incoming.length)return;setStatus("Lendo arquivo, copiando força bruta e preparando envio ao Google...","");for(const file of incoming)await parseFile(file);rebuild();renderAll();await syncRawBlocksToGoogle()}
+async function parseFile(file){const ext=file.name.split(".").pop().toLowerCase();if(ext==="json"){const imported=JSON.parse(await file.text());state=Object.assign(initialState(),imported);loadApiKeysOnlyFromBrowser();return}if(ext==="pdf"){const fp=fingerprintObject(["file",file.name,file.size,file.lastModified,"pdf"]);state.imports.push({id:uid(),fileName:file.name,type:"pdf_recebido",reason:"PDF registrado para extração futura",rowCount:0,confidence:.5,fingerprint:fp});state.rawRows.push({fileName:file.name,sheetName:"PDF",rowIndex:0,type:"pdf_placeholder",cells:{fileName:file.name,size:file.size,lastModified:file.lastModified},text:"PDF recebido: "+file.name,fingerprint:fp});return}const buffer=await file.arrayBuffer();const wb=XLSX.read(buffer,{type:"array",cellDates:true});const sheets=[];let totalRows=0;wb.SheetNames.forEach(function(name){const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:null,raw:false});const obj=sheetToObjects(rows);sheets.push({name:name,headers:obj.headers,objects:obj.rows,rows:rows.length});totalRows+=rows.length;captureRawRows(file.name,name,rows,obj.headers)});const detected=detectType(wb.SheetNames,sheets);const imp={id:uid(),fileName:file.name,type:detected.type,reason:detected.reason,rowCount:totalRows,confidence:detected.confidence,fingerprint:fingerprintObject(["file",file.name,file.size,file.lastModified,detected.type,totalRows])};state.imports.push(imp);state.rawSheets.push({importId:imp.id,fileName:file.name,type:detected.type,sheets:sheets})}
+function captureRawRows(fileName,sheetName,rows,headers){for(let i=0;i<rows.length;i++){const arr=rows[i]||[];if(arr.every(function(c){return c===null||c===""}))continue;const cells={};arr.forEach(function(v,idx){const h=headers&&headers[idx]?headers[idx]:"COL_"+(idx+1);cells[h]=v});const text=arr.map(function(x){return String(x??"").trim()}).filter(Boolean).join(" | ");const fp=fingerprintObject([fileName,sheetName,i,text]);state.rawRows.push({fileName:fileName,sheetName:sheetName,rowIndex:i,cells:cells,text:text,fingerprint:fp})}}
+function sheetToObjects(rows){let headerIndex=0,best=-1;const keys=["entrada","saída","saida","data","movimentação","movimentacao","produto","instituição","instituicao","quantidade","preço","preco","valor","código","codigo","negociação","negociacao","data com","pagamento","dy","categoria","saldo"];rows.slice(0,15).forEach(function(r,i){const txt=(r||[]).map(function(x){return String(x||"").toLowerCase()}).join("|");const score=keys.reduce(function(s,k){return s+(txt.includes(k)?1:0)},0);if(score>best){best=score;headerIndex=i}});const headers=(rows[headerIndex]||[]).map(function(h){return String(h||"").trim().replace(/\s+/g," ")});const data=[];for(let i=headerIndex+1;i<rows.length;i++){const r=rows[i];if(!r||r.every(function(c){return c===null||c===""}))continue;const o={};headers.forEach(function(h,idx){if(h)o[h]=r[idx]});if(Object.keys(o).length)data.push(o)}return{headers:headers,rows:data}}
+function nk(k){return String(k||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")}function val(o,cands){const map={};Object.keys(o||{}).forEach(function(k){map[nk(k)]=o[k]});for(const c of cands){const v=map[nk(c)];if(v!==undefined&&v!==null&&v!=="")return v}return null}
+function detectType(names,sheets){const h=sheets.flatMap(function(s){return s.headers}).map(nk).join(" ");const n=names.map(nk).join(" ");if(h.includes("entrada_saida")&&h.includes("movimentacao"))return{type:"movimentacao_b3",confidence:.97,reason:"Movimentação B3"};if(h.includes("data_com")&&h.includes("data_de_pagamento"))return{type:"eventos_b3",confidence:.95,reason:"Calendário de eventos"};if(h.includes("rend_abril")||h.includes("saldo_investido")||h.includes("rent_ult_12_m"))return{type:"performance_b3",confidence:.9,reason:"Relatório Meus Produtos"};if(n.includes("acoes")||n.includes("bdr")||h.includes("codigo_de_negociacao")||h.includes("valor_atualizado"))return{type:"posicao_b3",confidence:.92,reason:"Posição B3"};return{type:"desconhecido",confidence:.2,reason:"Tipo não reconhecido, mas bruto capturado"}}
+function tickerFrom(s){const text=String(s||"").toUpperCase();const m=text.match(/\b[A-Z]{4}\d{1,2}[A-Z]?\b/);return m?m[0]:null}function validTicker(t){return!!t&&!["TOTAL","SUBTOTAL","SEM_TICKER","CARTEIRA"].includes(String(t).toUpperCase())}function assetClass(t,p="",aba=""){const ticker=String(t||"").toUpperCase();const prod=String(p||"").toUpperCase();const sheet=String(aba||"").toUpperCase();if(sheet.includes("BDR")||ticker.endsWith("34"))return"BDR";if(sheet.includes("ETF")||prod.includes(" ETF"))return"ETF";if(sheet.includes("TESOURO"))return"Tesouro Direto";if(sheet.includes("RENDA FIXA")||prod.includes("CDB")||prod.includes("LCI")||prod.includes("LCA"))return"Renda Fixa";if(sheet.includes("FUNDO")||prod.includes("FII")||ticker.endsWith("11"))return"FII";if(sheet.includes("AÇÕES")||sheet.includes("ACOES")||/[3456]$/.test(ticker))return"Ação";return"Outro"}
+function addAsset(t,meta){if(!validTicker(t))return;if(!state.assets[t])state.assets[t]={ticker:t,nome:meta.produto||t,classe:meta.classe||"Outro",fontes:[]};if(meta.fonte&&!state.assets[t].fontes.includes(meta.fonte))state.assets[t].fontes.push(meta.fonte)}
+function rebuild(){state.assets={};state.positions=[];state.movements=[];state.income=[];state.events=[];state.performance=[];state.rawSheets.forEach(function(pkg){if(pkg.type==="movimentacao_b3")parseMov(pkg);if(pkg.type==="posicao_b3")parsePos(pkg);if(pkg.type==="eventos_b3")parseEvents(pkg);if(pkg.type==="performance_b3")parsePerf(pkg)});buildContext();state.rawBlocks=makeRawBlocks()}
+function parseMov(pkg){pkg.sheets.forEach(function(sh){sh.objects.forEach(function(r){const produto=val(r,["Produto","Ativo"]);const t=tickerFrom(produto);if(!validTicker(t))return;const mov=String(val(r,["Movimentação","Movimentacao"])||"");const item={data:val(r,["Data"]),ticker:t,produto:produto,movimentacao:mov,natureza:classMov(mov),quantidade:num(val(r,["Quantidade"])),valorUnitario:num(val(r,["Preço unitário","Preco unitario"])),valorTotal:num(val(r,["Valor da Operação","Valor da Operacao","Valor"])),instituicao:val(r,["Instituição","Instituicao"]),classe:assetClass(t,produto,sh.name)};state.movements.push(item);addAsset(t,{produto:produto,classe:item.classe,fonte:"movimentacao"});if(item.natureza==="provento")state.income.push(item)})})}
+function classMov(m){const s=String(m||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");if(s.includes("rendimento")||s.includes("dividendo")||s.includes("juros sobre capital")||s.includes("pagamento de juros"))return"provento";if(s.includes("transferencia"))return"transferencia";if(s.includes("liquidacao")||s.includes("compra")||s.includes("venda"))return"compra_venda";return"outro"}
+function parsePos(pkg){pkg.sheets.forEach(function(sh){sh.objects.forEach(function(r){const produto=val(r,["Produto","Nome do Produto","Ativo"]);const t=String(val(r,["Código de Negociação","Codigo de Negociacao","Código","Codigo","Ticker"])||tickerFrom(produto)||"").toUpperCase();if(!validTicker(t))return;const qtd=num(val(r,["Quantidade","Qtd"]));const price=num(val(r,["Preço de Fechamento","Preco de Fechamento","Preço unitário","Preco unitario"]));const value=num(val(r,["Valor Atualizado","Valor bruto","Valor Líquido","Valor Liquido","Saldo Investido","Valor"]));const c=assetClass(t,produto,sh.name);const pos={ticker:t,produto:produto,classe:c,instituicao:val(r,["Instituição","Instituicao"]),quantidade:qtd,precoFechamento:price,valor:value||qtd*price};if(pos.valor>0){state.positions.push(pos);addAsset(t,{produto:produto,classe:c,fonte:"posicao"})}})})}
+function parseEvents(pkg){pkg.sheets.forEach(function(sh){sh.objects.forEach(function(r){const produto=val(r,["Produto","Ativo"]);const t=tickerFrom(produto);if(!validTicker(t))return;state.events.push({ticker:t,produto:produto,classe:assetClass(t,produto,sh.name),evento:val(r,["Tipo de Evento","Tipo","Evento"]),dataCom:val(r,["Data COM","Data Com"]),pagamento:val(r,["Data de Pagamento","Pagamento"]),valorUnitario:num(val(r,["Preço Unitário Bruto","Valor Unitário","Valor Unitario"])),dy:num(val(r,["DY","Dividend Yield"]))});addAsset(t,{produto:produto,classe:assetClass(t,produto,sh.name),fonte:"eventos"})})})}
+function parsePerf(pkg){pkg.sheets.forEach(function(sh){sh.objects.forEach(function(r){const produto=val(r,["Produto","Ativo"]);const t=tickerFrom(produto);if(!validTicker(t))return;state.performance.push({ticker:t,produto:produto,categoria:val(r,["Categoria"]),saldo:num(val(r,["Saldo Investido","Saldo Investido (R$)"])),rendAno:num(val(r,["Rend. 2026 (R$)","Rend. Ano (R$)"])),rentAno:num(val(r,["Rent. 2026 (%)","Rent. Ano (%)"]))})})})}
+function sumBy(arr,k,v){const out={};arr.forEach(function(x){const key=x[k]||"Outro";out[key]=(out[key]||0)+Number(x[v]||0)});return out}
+function buildContext(){const total=state.positions.reduce(function(s,p){return s+p.valor},0);state.positions.forEach(function(p){p.percentual=total?p.valor/total*100:0});const incomeTotal=state.income.reduce(function(s,p){return s+p.valorTotal},0);const incomeBy=Object.entries(sumBy(state.income,"ticker","valorTotal")).sort(function(a,b){return b[1]-a[1]});const topPos=[...state.positions].sort(function(a,b){return b.valor-a.valor}).slice(0,12);const classes=sumBy(state.positions,"classe","valor");state.context={geradoEm:new Date().toISOString(),resumo:{valorTotal:total,numeroAtivos:Object.keys(state.assets).length,rendaRecebida:incomeTotal,classes:classes,maioresPosicoes:topPos,maioresPagadores:incomeBy.slice(0,12).map(function(x){return{ticker:x[0],valor:x[1]}}),linhasBrutas:state.rawRows.length},indices:calcIndices(total,incomeTotal,incomeBy,topPos),brapi:state.brapiData}}
+function calcIndices(total,incomeTotal,incomeBy,topPos){const top=function(n){return total?topPos.slice(0,n).reduce(function(s,p){return s+p.valor},0)/total*100:0};const topR=function(n){return incomeTotal?incomeBy.slice(0,n).reduce(function(s,p){return s+p[1]},0)/incomeTotal*100:0};const robustez=Math.max(0,Math.min(100,100-top(5)*.45-topR(5)*.25));return{top1:top(1),top5:top(5),top10:top(10),top3Renda:topR(3),top5Renda:topR(5),robustez:robustez}}
+function fingerprintObject(parts){const str=parts.map(function(x){return String(x??"").trim()}).join("|");let hash=0;for(let i=0;i<str.length;i++)hash=((hash<<5)-hash+str.charCodeAt(i))|0;return Math.abs(hash).toString(36)}
+function makeRawBlocks(){const size=Math.max(20,Math.min(500,Number(state.config.googleBlockSize||120)));const blocks=[];for(let i=0;i<state.rawRows.length;i+=size){const rows=state.rawRows.slice(i,i+size);blocks.push({blockIndex:blocks.length,createdAt:new Date().toISOString(),rowCount:rows.length,firstRow:i,lastRow:i+rows.length-1,fingerprint:fingerprintObject(["block",rows.map(function(r){return r.fingerprint}).join(",")]),rows:rows})}return blocks}
+function makeGoogleSnapshot(){return{version:"GWI_V7_3_FORCE_RAW",createdAt:new Date().toISOString(),imports:state.imports,rawBlocks:state.rawBlocks.map(function(b){return{blockIndex:b.blockIndex,rowCount:b.rowCount,firstRow:b.firstRow,lastRow:b.lastRow,fingerprint:b.fingerprint}}),assets:state.assets,positions:state.positions,movements:state.movements,income:state.income,events:state.events,performance:state.performance,context:state.context,brapiData:slimBrapiDataForGoogle(state.brapiData||{}),fingerprints:buildFingerprints()}}
+function buildFingerprints(){return{imports:state.imports.map(function(i){return i.fingerprint}).filter(Boolean),rawRows:state.rawRows.map(function(r){return r.fingerprint}),rawBlocks:state.rawBlocks.map(function(b){return b.fingerprint}),positions:state.positions.map(function(p){return fingerprintObject(["pos",p.ticker,p.classe,p.quantidade,p.valor,p.instituicao])}),movements:state.movements.map(function(m){return fingerprintObject(["mov",m.data,m.ticker,m.movimentacao,m.quantidade,m.valorTotal,m.instituicao])}),income:state.income.map(function(i){return fingerprintObject(["inc",i.data,i.ticker,i.movimentacao,i.valorTotal,i.instituicao])}),events:state.events.map(function(e){return fingerprintObject(["evt",e.ticker,e.evento,e.dataCom,e.pagamento,e.valorUnitario])})}}
+function slimBrapiDataForGoogle(data){if(!data||!data.raw)return data||{};const results=data.raw.results||data.raw.stocks||[];return{updatedAt:data.updatedAt,tickers:data.tickers||[],raw:{results:(Array.isArray(results)?results:[]).slice(0,50).map(function(r){return{symbol:r.symbol,shortName:r.shortName,longName:r.longName,regularMarketPrice:r.regularMarketPrice,regularMarketChangePercent:r.regularMarketChangePercent,marketCap:r.marketCap,dividendYield:r.dividendYield,sector:r.sector,industry:r.industry}})}}}
+async function testBackend(){try{setStatus("Testando backend Google...","");const data=await jsonpRequest({action:"ping"});if(!data.ok)throw new Error(data.error||"Backend retornou erro");state.backend.ok=true;state.backend.docUrl=data.docUrl||null;state.backend.lastPing=new Date().toISOString();setStatus("Backend Google ativo. Documento conectado.","ok");renderAll()}catch(e){setStatus("Erro no backend: "+e.message,"err")}}
+function jsonpRequest(params){return new Promise(function(resolve,reject){const cb="gwi_v7_3_"+Date.now()+"_"+Math.floor(Math.random()*999999);params.callback=cb;const url=new URL(state.config.backendUrl);Object.entries(params).forEach(function(x){url.searchParams.set(x[0],x[1])});const script=document.createElement("script");script.src=url.toString();const timeout=setTimeout(function(){cleanup();reject(new Error("Tempo esgotado no backend"))},20000);function cleanup(){clearTimeout(timeout);delete window[cb];if(script.parentNode)script.parentNode.removeChild(script)}window[cb]=function(data){cleanup();resolve(data)};script.onerror=function(){cleanup();reject(new Error("Falha JSONP"))};document.body.appendChild(script)})}
+async function readGoogleMemorySafe(){try{return await jsonpRequest({action:"read"})}catch(e){return null}}
+function analyzeGoogleDedup(previous){const fp=buildFingerprints();const entries=(((previous||{}).data||{}).entries||[]);const joined=entries.map(function(e){return String(e.text||"")}).join("\n");return{importAlreadySeen:(fp.imports||[]).length>0&&fp.imports.every(function(x){return joined.includes(x)}),rawBlocksRepeated:(fp.rawBlocks||[]).filter(function(x){return joined.includes(x)}).length,rawRowsRepeated:(fp.rawRows||[]).filter(function(x){return joined.includes(x)}).length,totalRawRows:(fp.rawRows||[]).length,totalRawBlocks:(fp.rawBlocks||[]).length}}
+async function syncRawBlocksToGoogle(){try{setStatus("Lendo memória Google e verificando repetição...","");const previous=await readGoogleMemorySafe();const dedupe=analyzeGoogleDedup(previous);if(dedupe.importAlreadySeen){setStatus("Arquivo já capturado anteriormente no Google. Nenhum bloco bruto foi reenviado.","ok");state.syncReport=dedupe;renderAll();return}let sent=0;let skipped=0;const previousText=((((previous||{}).data||{}).entries||[]).map(function(e){return String(e.text||"")}).join("\n"));for(const block of state.rawBlocks){if(previousText.includes(block.fingerprint)){skipped++;continue}const payload={action:"save_memory",pin:document.getElementById("backendPin")?.value||"2026",author:"Guido Wealth Intelligence v7.3",text:"GWI_V7_3_RAW_BLOCK\n"+JSON.stringify({blockIndex:block.blockIndex,fingerprint:block.fingerprint,rowCount:block.rowCount,firstRow:block.firstRow,lastRow:block.lastRow,rows:block.rows},null,2),bundle:{version:"GWI_V7_3_RAW_BLOCK",block:block,context:state.context}};const r=await fetch(state.config.backendUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok)throw new Error(data.error||"Erro ao salvar bloco no Google");sent++;await sleep(250)}const snapshot=makeGoogleSnapshot();const summaryPayload={action:"save_memory",pin:document.getElementById("backendPin")?.value||"2026",author:"Guido Wealth Intelligence v7.3",text:"GWI_V7_3_IMPORT_SUMMARY\n"+JSON.stringify({imports:snapshot.imports,rawBlocks:snapshot.rawBlocks,resumo:snapshot.context?.resumo,indices:snapshot.context?.indices,dedupe:{...dedupe,sentBlocks:sent,skippedBlocks:skipped}},null,2),bundle:snapshot};await fetch(state.config.backendUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(summaryPayload)});state.backend.ok=true;state.backend.lastPing=new Date().toISOString();state.syncReport={...dedupe,sentBlocks:sent,skippedBlocks:skipped};setStatus("Google atualizado: "+sent+" bloco(s) enviados, "+skipped+" repetido(s) ignorado(s).", "ok");renderAll()}catch(e){setStatus("Arquivo processado, mas envio ao Google falhou: "+e.message,"err")}}
+function sleep(ms){return new Promise(function(resolve){setTimeout(resolve,ms)})}
+async function handleAiQuestion(){const q=(document.getElementById("aiQuestion").value||"").trim();if(!q)return;state.chat.push({role:"user",text:q,at:new Date().toISOString()});state.currentInsight=thinking(q);renderAll();setStatus("Pensando, cruzando dados internos e externos...","");let answer="";try{if(state.config.brapiMode==="auto")await maybeBrapi(q);if(state.config.aiMode==="openai_direct")answer=await askOpenAI(q);else if(state.config.aiMode==="backend")answer=await askBackend(q);else answer=localAnswer(q);setStatus("Resposta construída.","ok")}catch(e){answer=localAnswer(q)+"\n\nObservação: "+e.message;setStatus("Fallback local: "+e.message,"err")}answer=compact(answer);const insight=buildInsight(q,answer);state.currentInsight=insight;state.chat.push({role:"assistant",text:answer,at:new Date().toISOString(),insightId:insight.id});document.getElementById("aiQuestion").value="";renderAll()}
+function thinking(q){return{intent:"thinking",question:q,title:"Pensando...",summary:"Construindo resposta visual"}}function compact(s){const text=cleanText(s);return text.length<900?text:text.split("\n").filter(Boolean).slice(0,8).join("\n")+"\n\n[resposta compactada para leitura visual]"}
+function getIntent(q){const s=q.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");if(s.includes("pior")||s.includes("escondid")||s.includes("engan"))return"hidden_risks";if(s.includes("dividendo")||s.includes("renda")||s.includes("pagaram"))return"income";if(s.includes("concentr"))return"concentration";if(s.includes("extern")||s.includes("brapi")||s.includes("investig"))return"external";if(s.includes("parecer"))return"report";return"general"}
+function buildInsight(q,answer){const it=getIntent(q);const c=state.context||{};const idx=c.indices||{};const total=c.resumo?.valorTotal||0;const renda=c.resumo?.rendaRecebida||0;const topIncome=c.resumo?.maioresPagadores||[];const topPos=(c.resumo?.maioresPosicoes||[]).slice(0,10).map(function(p){return{ticker:p.ticker,valor:p.valor,percentual:p.percentual,classe:p.classe}});let title="Diagnóstico visual";let charts=[];let warnings=[];let missions=["Revisar concentração antes de novo aporte."];let next=["Qual risco invisível devo investigar?","Quais dados externos mudam a leitura?"];if(it==="hidden_risks"){title="Piores resultados ocultos";charts=[{title:"Maiores exposições",data:topPos,labelKey:"ticker",valueKey:"percentual",format:"percent"}];warnings=["A pior informação pode ser concentração, ausência de tese ou renda dependente de poucos ativos."];missions=["Investigar top 5 posições e top 5 pagadores.","Comparar renda recebida com retorno total."]}if(it==="income"){title="Renda recebida — visão crítica";charts=[{title:"Top pagadores de renda",data:topIncome,labelKey:"ticker",valueKey:"valor",format:"money"}];warnings=["Renda alta pode esconder concentração ou evento não recorrente."];missions=["Separar renda recorrente de renda extraordinária."]}if(it==="concentration"){title="Concentração patrimonial";charts=[{title:"Top posições por % da carteira",data:topPos,labelKey:"ticker",valueKey:"percentual",format:"percent"}];warnings=["Top 5 alto reduz margem de erro."]}if(it==="external"){title="Dados internos + externos";charts=[{title:"Ativos para investigação externa",data:topPos,labelKey:"ticker",valueKey:"valor",format:"money"}];warnings=["BRAPI ajuda com dados de mercado, mas a decisão depende da tese patrimonial."];missions=["Buscar BRAPI dos principais tickers."]}return{id:uid(),createdAt:new Date().toISOString(),question:q,intent:it,title:title,summary:answer,metrics:[{label:"Valor detectado",value:money(total)},{label:"Renda recebida",value:money(renda)},{label:"Robustez",value:(idx.robustez||0).toFixed(0)+"/100"}],charts:charts,warnings:warnings,missions:missions,nextQuestions:next}}
+function localAnswer(q){const c=state.context||{};const idx=c.indices||{};const top=(c.resumo?.maioresPosicoes||[]).slice(0,5).map(function(p){return p.ticker}).join(", ")||"sem posições";const pay=(c.resumo?.maioresPagadores||[]).slice(0,5).map(function(p){return p.ticker}).join(", ")||"sem renda";return"Leitura curta:\n\nValor detectado: "+money(c.resumo?.valorTotal||0)+".\nRenda recebida: "+money(c.resumo?.rendaRecebida||0)+".\nRobustez: "+(idx.robustez||0).toFixed(0)+"/100.\nTop posições: "+top+".\nTop pagadores: "+pay+".\nLinhas brutas capturadas: "+(c.resumo?.linhasBrutas||0)+".\n\nResposta à pergunta: "+q+"\n\nMissão: investigar se os maiores pagadores também preservam patrimônio e se as maiores posições têm tese clara."}
+async function askBackend(question){const payload={action:"ask",pin:document.getElementById("backendPin")?.value||"2026",question:question,source:"gwi_v7_3",bundle:state.context,brapi:state.brapiData,style:state.config.answerStyle};const r=await fetch(state.config.backendUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok)throw new Error(data.error||"Erro no backend");state.backend.ok=true;state.backend.docUrl=data.docUrl||state.backend.docUrl;return data.answer||data.message||"Backend respondeu sem texto."}
+async function askOpenAI(question){if(!state.config.openAiKey)throw new Error("API OpenAI não configurada.");const payload={model:state.config.openAiModel,temperature:Number(state.config.temperature||0.2),messages:[{role:"system",content:state.config.systemPrompt},{role:"user",content:"Pergunta: "+question+"\n\nDADOS INTERNOS B3:\n"+JSON.stringify(state.context,null,2)+"\n\nDADOS BRAPI:\n"+JSON.stringify(state.brapiData,null,2)}]};const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+state.config.openAiKey},body:JSON.stringify(payload)});const data=await r.json();if(!r.ok)throw new Error(data.error?.message||"Erro OpenAI");return data.choices?.[0]?.message?.content||"OpenAI respondeu sem texto."}
+function extractTickers(q){const typed=String(q).toUpperCase().match(/\b[A-Z]{4}\d{1,2}[A-Z]?\b/g)||[];const top=[...state.positions].sort(function(a,b){return b.valor-a.valor}).slice(0,Number(state.config.brapiLimit||20)).map(function(p){return p.ticker});return[...new Set([...typed,...top])].filter(validTicker)}async function maybeBrapi(q){const tickers=extractTickers(q).slice(0,Number(state.config.brapiLimit||20));if(tickers.length)await fetchBrapi(tickers)}async function fetchBrapi(tickers){if(!state.config.brapiToken)throw new Error("Token BRAPI não configurado.");const unique=[...new Set((tickers||[]).filter(validTicker))].slice(0,Number(state.config.brapiLimit||20));const batchSize=Math.max(1,Math.min(10,Number(state.config.brapiBatchSize||10)));const batches=[];for(let i=0;i<unique.length;i+=batchSize)batches.push(unique.slice(i,i+batchSize));const all=[];const errors=[];for(let i=0;i<batches.length;i++){const batch=batches[i];try{setStatus("BRAPI lote "+(i+1)+"/"+batches.length+": "+batch.join(", "),"");const url="https://brapi.dev/api/quote/"+encodeURIComponent(batch.join(","))+"?modules=summaryProfile,financialData,defaultKeyStatistics&token="+encodeURIComponent(state.config.brapiToken);const r=await fetch(url);const data=await r.json();if(!r.ok)throw new Error(data.message||"Erro BRAPI");const results=data.results||data.stocks||[];if(Array.isArray(results))all.push(...results);await sleep(350)}catch(err){errors.push({batch:batch,message:err.message})}}state.brapiData={updatedAt:new Date().toISOString(),tickers:unique,batchSize:batchSize,batches:batches.length,errors:errors,raw:{results:all}};buildContext();if(errors.length&&!all.length)throw new Error(errors.map(function(e){return e.message}).join(" | "));return state.brapiData}
+async function consultBrapiForTopAssets(){try{const tickers=extractTickers(document.getElementById("aiQuestion")?.value||"");await fetchBrapi(tickers);setStatus("BRAPI atualizada em lotes: "+((state.brapiData.raw?.results||[]).length)+" ativo(s) lidos.","ok");renderAll()}catch(e){setStatus("Erro BRAPI: "+e.message,"err")}}
+function renderAll(){renderMetrics();renderImport();renderChat();renderInsight();renderConfig();renderTables();renderJson()}
+function renderMetrics(){document.getElementById("mFiles").textContent=state.imports.length;document.getElementById("mRawRows").textContent=state.rawRows.length;document.getElementById("mAssets").textContent=Object.keys(state.assets).length;document.getElementById("mGoogle").textContent=state.backend.ok?"OK":"—";const brapiCount=state.brapiData?.raw?.results?.length||0;document.getElementById("mBrapi").textContent=brapiCount?brapiCount:(state.config.brapiToken?"ON":"—")}
+function renderImport(){document.getElementById("importList").innerHTML=state.imports.length?state.imports.map(function(i){return"<div class='file-item'><div><strong>"+safe(i.fileName)+"</strong><br><small>"+safe(i.type)+" • "+(i.rowCount||0)+" linhas • "+safe(i.reason)+"<br>Fingerprint: "+safe(i.fingerprint||"")+"</small></div><span class='pill info'>"+safe(i.type)+"</span></div>"}).join(""):"<div class='alert info'>Nenhum arquivo importado ainda.</div><div class='alert purple'><strong>Versão 7.3:</strong> captura bruta ampla, envio ao Google em blocos, deduplicação por fingerprints.</div>";const counts={};state.imports.forEach(function(i){counts[i.type]=(counts[i.type]||0)+1});document.getElementById("typeSummary").innerHTML=Object.entries(counts).map(function(x){return"<div class='alert ok'><strong>"+safe(x[0])+"</strong>: "+x[1]+"</div>"}).join("")||"<div class='alert info'>Aguardando dados.</div>";document.getElementById("qualityBox").innerHTML="<div class='alert info'>Linhas brutas capturadas: "+state.rawRows.length+"<br>Blocos Google preparados: "+state.rawBlocks.length+"<br>Ativos válidos: "+Object.keys(state.assets).length+"<br>Última sincronização: "+(state.syncReport?JSON.stringify(state.syncReport):"pendente")+"</div>"}
+function renderChat(){const base="<div class='chat-msg assistant'><strong>Guido Wealth IA v7.3</strong><p>Pronto para capturar dados brutos, enviar ao Google e interpretar depois com IA.</p></div>";document.getElementById("chatHistory").innerHTML=base+(state.chat||[]).map(function(m){return"<div class='chat-msg "+m.role+"'><strong>"+(m.role==="user"?"Você":"Guido Wealth IA")+"</strong><p>"+safe(cleanText(m.text))+"</p></div>"}).join("");document.getElementById("chatHistory").scrollTop=document.getElementById("chatHistory").scrollHeight}
+function renderInsight(){const ins=state.currentInsight;if(!ins){document.getElementById("dynamicResults").innerHTML="<div class='alert info'>Faça uma pergunta para gerar cards, gráficos e missões.</div>";return}if(ins.intent==="thinking"){document.getElementById("dynamicResults").innerHTML="<div class='thinking-panel'><div class='thinking-header'><span class='pulse-orb'></span><span>Pensando e montando visualizações...</span></div><div class='thinking-bar'><span></span></div><div class='thinking-steps'><div class='thinking-step active'><span>1. Pergunta</span><strong>"+safe(ins.question.slice(0,42))+"</strong></div><div class='thinking-step active'><span>2. Dados brutos</span><strong>"+state.rawRows.length+" linhas</strong></div><div class='thinking-step active'><span>3. Google</span><strong>"+(state.backend.ok?"conectado":"pendente")+"</strong></div><div class='thinking-step'><span>4. Visual</span><strong>criando</strong></div></div></div>";return}document.getElementById("dynamicResults").innerHTML="<h2>"+safe(ins.title)+"</h2><div class='visual-answer'><strong>Resposta curta</strong><br>"+safe(cleanText(ins.summary))+"</div><div class='grid cols3' style='margin-top:12px'>"+ins.metrics.map(function(m){return"<div class='impact-card'><div class='big-number'>"+safe(m.value)+"</div><div class='caption'>"+safe(m.label)+"</div></div>"}).join("")+"</div>"+ins.charts.map(renderChart).join("")+ins.warnings.map(function(w){return"<div class='alert warn'><strong>Alerta:</strong> "+safe(w)+"</div>"}).join("")+"<h3>Missões</h3>"+ins.missions.map(function(m){return"<div class='alert purple'>"+safe(m)+"</div>"}).join("")+"<div class='quick'>"+ins.nextQuestions.map(function(q){return"<button onclick=\"askPreset('"+safe(q).replace(/'/g,"&#039;")+"')\">"+safe(q)+"</button>"}).join("")+"</div>"}
+function renderChart(ch){const max=Math.max(...(ch.data||[]).map(function(x){return Number(x[ch.valueKey]||0)}),1);return"<div class='card' style='box-shadow:none;margin-top:12px'><h3>"+safe(ch.title)+"</h3>"+(ch.data||[]).map(function(x){const v=Number(x[ch.valueKey]||0);const w=Math.max(6,Math.min(100,v/max*100));const show=ch.format==="money"?money(v):ch.format==="percent"?v.toFixed(1)+"%":v;return"<div class='chart-line'><span>"+safe(x[ch.labelKey])+"</span><div class='bar-wrap'><div class='bar' style='width:"+w+"%'></div></div><strong>"+show+"</strong></div>"}).join("")+"<div class='sparkline'>"+(ch.data||[]).slice(0,16).map(function(x){const v=Number(x[ch.valueKey]||0);return"<span style='height:"+Math.max(8,Math.min(100,v/max*100))+"%'></span>"}).join("")+"</div></div>"}
+function renderConfig(){loadApiKeysOnlyFromBrowser();document.getElementById("openAiKey").value=state.config.openAiKey?"••••••••••••••••":"";document.getElementById("openAiModel").value=state.config.openAiModel;document.getElementById("openAiModel2").value=state.config.openAiModel;document.getElementById("temperature").value=state.config.temperature;document.getElementById("answerStyle").value=state.config.answerStyle;document.getElementById("brapiToken").value=state.config.brapiToken?"••••••••••••••••":"";document.getElementById("brapiMode").value=state.config.brapiMode;document.getElementById("brapiLimit").value=state.config.brapiLimit;document.getElementById("brapiBatchSize").value=state.config.brapiBatchSize;document.getElementById("backendUrl").value=state.config.backendUrl;document.getElementById("googleBlockSize").value=state.config.googleBlockSize;document.getElementById("systemPrompt").value=state.config.systemPrompt;document.getElementById("aiMode").value=state.config.aiMode}
+function renderTables(){document.getElementById("portfolioTable").innerHTML="<thead><tr><th>Ticker</th><th>Classe</th><th>Valor</th><th>%</th><th>Produto</th></tr></thead><tbody>"+[...state.positions].sort(function(a,b){return b.valor-a.valor}).slice(0,500).map(function(p){return"<tr><td>"+safe(p.ticker)+"</td><td>"+safe(p.classe)+"</td><td>"+money(p.valor)+"</td><td>"+(p.percentual||0).toFixed(2)+"%</td><td>"+safe(p.produto)+"</td></tr>"}).join("")+"</tbody>";document.getElementById("rawTable").innerHTML="<thead><tr><th>Arquivo</th><th>Aba</th><th>Linha</th><th>Texto</th><th>Fingerprint</th></tr></thead><tbody>"+state.rawRows.slice(0,200).map(function(r){return"<tr><td>"+safe(r.fileName)+"</td><td>"+safe(r.sheetName)+"</td><td>"+safe(r.rowIndex)+"</td><td>"+safe(r.text)+"</td><td>"+safe(r.fingerprint)+"</td></tr>"}).join("")+"</tbody>"}
+function renderJson(){const key=document.getElementById("jsonSelect")?.value||"context";const data={context:state.context,snapshot:makeGoogleSnapshot(),rawBlocks:state.rawBlocks,insight:state.currentInsight,brapi:state.brapiData,state:state}[key]||state;document.getElementById("jsonBox").textContent=JSON.stringify(data,null,2)}
+function askPreset(q){document.getElementById("aiQuestion").value=q;handleAiQuestion()}function setStatus(msg,type){const el=document.getElementById("backendStatus");el.textContent=msg;el.className="status"+(type?" "+type:"")}function saveConfigFromScreen(){state.config.openAiModel=document.getElementById("openAiModel")?.value||document.getElementById("openAiModel2")?.value||state.config.openAiModel;state.config.temperature=Number(document.getElementById("temperature")?.value||state.config.temperature||0.2);state.config.answerStyle=document.getElementById("answerStyle")?.value||state.config.answerStyle;state.config.brapiMode=document.getElementById("brapiMode")?.value||state.config.brapiMode;state.config.brapiLimit=Number(document.getElementById("brapiLimit")?.value||state.config.brapiLimit||20);state.config.brapiBatchSize=Math.max(1,Math.min(10,Number(document.getElementById("brapiBatchSize")?.value||state.config.brapiBatchSize||10)));state.config.googleBlockSize=Number(document.getElementById("googleBlockSize")?.value||state.config.googleBlockSize||120);state.config.backendUrl=document.getElementById("backendUrl")?.value||state.config.backendUrl;state.config.aiMode=document.getElementById("aiMode")?.value||state.config.aiMode;state.config.systemPrompt=document.getElementById("systemPrompt")?.value||state.config.systemPrompt;renderMetrics()}
+function copyPrompt(){navigator.clipboard.writeText(state.config.systemPrompt+"\n\nDADOS B3:\n"+JSON.stringify(state.context,null,2)+"\n\nBRAPI:\n"+JSON.stringify(state.brapiData,null,2));alert("Contexto copiado.")}function exportSessionJson(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="gwi-v7-3-sessao.json";a.click();URL.revokeObjectURL(a.href)}function clearSession(){if(confirm("Limpar apenas a sessão atual? Os dados enviados ao Google permanecem no Google Docs.")){const keepConfig=state.config;const keepBackend=state.backend;state=initialState();state.config=keepConfig;state.backend=keepBackend;loadApiKeysOnlyFromBrowser();buildContext();renderAll();setStatus("Sessão local limpa. A memória do Google não foi apagada.","ok")}}
+async function saveInsightToGoogle(){if(!state.currentInsight)return alert("Gere um insight primeiro.");try{const payload={action:"save_memory",pin:document.getElementById("backendPin")?.value||"2026",author:"Guido Wealth Intelligence v7.3",text:"GWI_V7_3_INSIGHT\n"+JSON.stringify(state.currentInsight,null,2),bundle:{insight:state.currentInsight,context:state.context}};const r=await fetch(state.config.backendUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});const data=await r.json();if(!data.ok)throw new Error(data.error||"Erro ao salvar insight");setStatus("Insight salvo no Google Docs.","ok")}catch(e){setStatus("Erro ao salvar insight no Google: "+e.message,"err")}}
+function copyJson(){navigator.clipboard.writeText(document.getElementById("jsonBox").textContent);alert("JSON copiado.")}
+loadApiKeysOnlyFromBrowser();buildContext();renderAll();
+</script>
 </body>
 </html>
