@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Guido Wealth Intelligence — Versão 6</title>
+  <title>Guido Wealth Intelligence — Versão 7</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
@@ -16,9 +16,9 @@
   <div class="app">
     <header>
       <div class="brand">
-        <div class="logo">V6</div>
+        <div class="logo">V7</div>
         <div>
-          <h1>Guido Wealth Intelligence — Versão 6</h1>
+          <h1>Guido Wealth Intelligence — Versão 7</h1>
           <div class="subtitle">Portal de conversação profunda com seus dados B3: combina base interna, memória patrimonial, GPT/OpenAI, BRAPI e heurísticas para responder como um ChatGPT financeiro pessoal, com gráficos curtos, visuais e objetivos.</div>
         </div>
       </div>
@@ -41,7 +41,7 @@
 
     <section id="portal" class="active">
       <div class="hero">
-        <div class="quote">Versão 6: upload corrigido, sem estourar o limite do navegador.</div>
+        <div class="quote">Versão 7: upload vai para o Google, com deduplicação analítica.</div>
         <p>As respostas foram redesenhadas para serem mais curtas, visuais e úteis. Enquanto a IA pensa, o painel mostra o que está sendo calculado. Depois, aparecem cards, rankings, barras e missões objetivas.</p>
       </div>
       <div class="grid cols5" style="margin-top:14px">
@@ -130,122 +130,117 @@
 
   <script>
     const DEFAULT_BACKEND_URL="https://script.google.com/macros/s/AKfycbzWx8kThrG0L-VAhC-W-RP7Q7KpcYwEEi1_dNM0p6i3859AbAL5Kv_gx6XMaXiRpevJ/exec";
-    const LS="gwi_v6_portal_profundo_sem_quota";
+    const LS_KEYS="gwi_v7_api_keys_browser_only";
     const BRL=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
     const defaultPrompt=`Você é o Guido Wealth IA — Versão 5. Responda como um ChatGPT financeiro profundo, mas usando os dados B3 do usuário como base central. Use também dados BRAPI quando disponíveis. Seja curto, visual e estratégico. Separe fatos, riscos, interpretação e missões. Não dê ordem absoluta de compra ou venda; use linguagem de apoio à decisão. Prefira resposta objetiva, com poucos parágrafos e bons insights.`;
-    let state=loadState();
+    let state=initialState();
     function initialState(){return{imports:[],rawSheets:[],assets:{},positions:[],movements:[],income:[],events:[],performance:[],chat:[],currentInsight:null,pinned:[],brapiData:{},backend:{ok:false,docUrl:null,lastPing:null},config:{backendUrl:DEFAULT_BACKEND_URL,aiMode:'backend',openAiKey:'',openAiModel:'gpt-4.1-mini',temperature:0.2,answerStyle:'visual_short',brapiToken:'',brapiMode:'off',brapiLimit:12,systemPrompt:defaultPrompt}}}
     function loadState(){
-      try {
-        const saved = JSON.parse(localStorage.getItem(LS)) || {};
-        const base = initialState();
-        return deepMerge(base, saved);
-      } catch(e) {
-        return initialState();
-      }
+      // Versão 7: a base patrimonial não é mais carregada do navegador.
+      // Os dados importados são processados na sessão e enviados ao Google Docs/Apps Script.
+      return initialState();
     }
 
-    function deepMerge(base, saved){
-      for(const k in saved){
-        if(saved[k] && typeof saved[k] === 'object' && !Array.isArray(saved[k]) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) base[k] = deepMerge(base[k], saved[k]);
-        else base[k] = saved[k];
-      }
-      if(!base.rawSheets) base.rawSheets = [];
-      return base;
+    function loadApiKeysOnlyFromBrowser(){
+      try {
+        const saved = JSON.parse(localStorage.getItem(LS_KEYS) || '{}');
+        state.config.openAiKey = saved.openAiKey || '';
+        state.config.brapiToken = saved.brapiToken || '';
+      } catch(e) {}
+    }
+
+    function saveApiKeysOnlyInBrowser(){
+      const payload = {
+        openAiKey: (openAiKey?.value || dlgOpenAiKey?.value || state.config.openAiKey || '').trim(),
+        brapiToken: (brapiToken?.value || dlgBrapiToken?.value || state.config.brapiToken || '').trim()
+      };
+      localStorage.setItem(LS_KEYS, JSON.stringify(payload));
+      loadApiKeysOnlyFromBrowser();
+      renderAll();
+      setStatus('APIs salvas apenas neste navegador. A base B3 continua indo para o Google, não para o navegador.', 'ok');
+    }
+
+    function clearBrowserApiKeys(){
+      localStorage.removeItem(LS_KEYS);
+      state.config.openAiKey = '';
+      state.config.brapiToken = '';
+      renderAll();
+      setStatus('APIs apagadas deste navegador.', 'ok');
     }
     function saveState(){
-      persistStateSafely();
+      // Versão 7: não gravar base B3, planilhas, carteira ou respostas no localStorage.
+      // Renderiza a sessão atual e mantém a persistência no Google via syncToGoogle().
       renderAll();
     }
 
-    function persistStateSafely(){
-      const light = makeLightStateForStorage();
-      try {
-        localStorage.setItem(LS, JSON.stringify(light));
-      } catch (err) {
-        console.warn('Falha ao salvar estado completo. Tentando versão ultraleve.', err);
-        const ultra = makeUltraLightStateForStorage(light);
-        try {
-          localStorage.setItem(LS, JSON.stringify(ultra));
-          setStatus('Base importada. Salvamento local ultraleve ativado para não estourar o limite do navegador.', 'ok');
-        } catch (err2) {
-          console.error('Falha também no salvamento ultraleve.', err2);
-          setStatus('Arquivo lido, mas o navegador não conseguiu salvar tudo no localStorage. Exporte backup ou reduza dados.', 'err');
-        }
-      }
-    }
-
-    function makeLightStateForStorage(){
-      const light = {
-        ...state,
-        rawSheets: [],
-        chat: (state.chat || []).slice(-40),
-        brapiData: slimBrapiData(state.brapiData || {})
-      };
-      light.imports = (state.imports || []).map(i => ({
-        id: i.id,
-        fileName: i.fileName,
-        type: i.type,
-        reason: i.reason,
-        rowCount: i.rowCount,
-        confidence: i.confidence
-      }));
-      return light;
-    }
-
-    function makeUltraLightStateForStorage(light){
+    function makeGoogleSnapshot(){
       return {
-        ...light,
-        movements: (light.movements || []).slice(-1200),
-        income: (light.income || []).slice(-1200),
-        events: (light.events || []).slice(0, 800),
-        performance: (light.performance || []).slice(0, 800),
-        chat: (light.chat || []).slice(-20),
-        currentInsight: light.currentInsight ? {
-          id: light.currentInsight.id,
-          title: light.currentInsight.title,
-          summary: light.currentInsight.summary,
-          metrics: light.currentInsight.metrics,
-          charts: light.currentInsight.charts,
-          warnings: light.currentInsight.warnings,
-          missions: light.currentInsight.missions,
-          nextQuestions: light.currentInsight.nextQuestions,
-          question: light.currentInsight.question,
-          intent: light.currentInsight.intent,
-          createdAt: light.currentInsight.createdAt
-        } : null
+        version: 'GWI_V7_GOOGLE_FIRST',
+        createdAt: new Date().toISOString(),
+        imports: state.imports,
+        assets: state.assets,
+        positions: state.positions,
+        movements: state.movements,
+        income: state.income,
+        events: state.events,
+        performance: state.performance,
+        context: state.context,
+        brapiData: slimBrapiDataForGoogle(state.brapiData || {}),
+        fingerprints: buildFingerprints()
       };
     }
 
-    function slimBrapiData(data){
+    function slimBrapiDataForGoogle(data){
       if(!data || !data.raw) return data || {};
       const results = data.raw.results || data.raw.stocks || [];
       return {
         updatedAt: data.updatedAt,
         tickers: data.tickers || [],
         raw: {
-          results: (Array.isArray(results) ? results : []).slice(0, 30).map(r => ({
+          results: (Array.isArray(results) ? results : []).slice(0, 50).map(r => ({
             symbol: r.symbol,
             shortName: r.shortName,
             longName: r.longName,
-            currency: r.currency,
             regularMarketPrice: r.regularMarketPrice,
             regularMarketChangePercent: r.regularMarketChangePercent,
             marketCap: r.marketCap,
             dividendYield: r.dividendYield,
-            priceEarnings: r.priceEarnings,
-            bookValue: r.bookValue,
             sector: r.sector,
             industry: r.industry
           }))
         }
       };
     }
+
+    function buildFingerprints(){
+      return {
+        imports: state.imports.map(i => i.fingerprint).filter(Boolean),
+        positions: state.positions.map(p => fingerprintObject(['pos', p.ticker, p.classe, p.quantidade, p.valor, p.instituicao])),
+        movements: state.movements.map(m => fingerprintObject(['mov', m.data, m.ticker, m.movimentacao, m.quantidade, m.valorTotal, m.instituicao])),
+        income: state.income.map(i => fingerprintObject(['inc', i.data, i.ticker, i.movimentacao, i.valorTotal, i.instituicao])),
+        events: state.events.map(e => fingerprintObject(['evt', e.ticker, e.evento, e.dataCom, e.pagamento, e.valorUnitario]))
+      };
+    }
+
+    function fingerprintObject(parts){
+      const str = parts.map(x => String(x ?? '').trim()).join('|');
+      let hash = 0;
+      for(let i=0;i<str.length;i++) hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+      return Math.abs(hash).toString(36);
+    }
     function money(v){return BRL.format(Number(v||0))}function num(v){if(v===null||v===undefined||v==='')return 0;if(typeof v==='number')return v;let s=String(v).trim().replace(/R\$\s?/g,'').replace(/\./g,'').replace(',','.').replace('%','');let n=Number(s);return isNaN(n)?0:n}function safe(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}function uid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}function cleanText(s){return String(s||'').replace(/\\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim()}function showPanel(id,el){document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));if(el)el.classList.add('active');renderAll()}
 
     fileInput.addEventListener('change',e=>handleFiles(e.target.files));fileInput2.addEventListener('change',e=>handleFiles(e.target.files));['dragenter','dragover'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.add('drag')}));['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt,e=>{e.preventDefault();dropzone.classList.remove('drag')}));dropzone.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
-    async function handleFiles(files){for(const file of [...files])await parseFile(file);rebuild();saveState()}
-    async function parseFile(file){const ext=file.name.split('.').pop().toLowerCase();if(ext==='json'){state=Object.assign(initialState(),JSON.parse(await file.text()));return}if(ext==='pdf'){state.imports.push({id:uid(),fileName:file.name,type:'pdf_recebido',reason:'PDF reservado para extração futura',rowCount:0,confidence:.5});return}const buffer=await file.arrayBuffer();const wb=XLSX.read(buffer,{type:'array',cellDates:true});const sheets=[];wb.SheetNames.forEach(name=>{const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:null,raw:false});const obj=sheetToObjects(rows);sheets.push({name,headers:obj.headers,objects:obj.rows,rows:rows.length})});const detected=detectType(wb.SheetNames,sheets);const imp={id:uid(),fileName:file.name,type:detected.type,reason:detected.reason,rowCount:sheets.reduce((s,x)=>s+x.rows,0),confidence:detected.confidence};state.imports.push(imp);state.rawSheets.push({importId:imp.id,fileName:file.name,type:detected.type,sheets})}
+    async function handleFiles(files){
+      const incoming = [...files];
+      if(!incoming.length) return;
+      setStatus('Lendo arquivo e preparando envio ao Google...', '');
+      for(const file of incoming) await parseFile(file);
+      rebuild();
+      renderAll();
+      await syncToGoogleAfterImport();
+    }
+    async function parseFile(file){const ext=file.name.split('.').pop().toLowerCase();if(ext==='json'){state=Object.assign(initialState(),JSON.parse(await file.text()));return}if(ext==='pdf'){state.imports.push({id:uid(),fileName:file.name,type:'pdf_recebido',reason:'PDF reservado para extração futura',rowCount:0,confidence:.5});return}const buffer=await file.arrayBuffer();const wb=XLSX.read(buffer,{type:'array',cellDates:true});const sheets=[];wb.SheetNames.forEach(name=>{const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,defval:null,raw:false});const obj=sheetToObjects(rows);sheets.push({name,headers:obj.headers,objects:obj.rows,rows:rows.length})});const detected=detectType(wb.SheetNames,sheets);const imp={id:uid(),fileName:file.name,type:detected.type,reason:detected.reason,rowCount:sheets.reduce((s,x)=>s+x.rows,0),confidence:detected.confidence,fingerprint:fingerprintObject(['file',file.name,file.size,file.lastModified,detected.type,sheets.reduce((s,x)=>s+x.rows,0)])};state.imports.push(imp);state.rawSheets.push({importId:imp.id,fileName:file.name,type:detected.type,sheets})}
     function sheetToObjects(rows){let headerIndex=0,best=-1;const keys=['entrada','saída','saida','data','movimentação','movimentacao','produto','instituição','instituicao','quantidade','preço','preco','valor','código','codigo','negociação','negociacao','data com','pagamento','dy','categoria','saldo'];rows.slice(0,15).forEach((r,i)=>{const txt=r.map(x=>String(x||'').toLowerCase()).join('|');const score=keys.reduce((s,k)=>s+(txt.includes(k)?1:0),0);if(score>best){best=score;headerIndex=i}});const headers=(rows[headerIndex]||[]).map(h=>String(h||'').trim().replace(/\s+/g,' '));const data=[];for(let i=headerIndex+1;i<rows.length;i++){const r=rows[i];if(!r||r.every(c=>c===null||c===''))continue;const o={};headers.forEach((h,idx)=>{if(h)o[h]=r[idx]});if(Object.keys(o).length)data.push(o)}return{headers,rows:data}}
     function nk(k){return String(k||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')}function val(o,cands){const map={};Object.keys(o||{}).forEach(k=>map[nk(k)]=o[k]);for(const c of cands){const v=map[nk(c)];if(v!==undefined&&v!==null&&v!=='')return v}return null}
     function detectType(names,sheets){const h=sheets.flatMap(s=>s.headers).map(nk).join(' ');const n=names.map(nk).join(' ');if(h.includes('entrada_saida')&&h.includes('movimentacao'))return{type:'movimentacao_b3',confidence:.97,reason:'Movimentação B3'};if(h.includes('data_com')&&h.includes('data_de_pagamento'))return{type:'eventos_b3',confidence:.95,reason:'Calendário de eventos'};if(h.includes('rend_abril')||h.includes('saldo_investido')||h.includes('rent_ult_12_m'))return{type:'performance_b3',confidence:.9,reason:'Relatório Meus Produtos'};if(n.includes('acoes')||n.includes('bdr')||h.includes('codigo_de_negociacao')||h.includes('valor_atualizado'))return{type:'posicao_b3',confidence:.92,reason:'Posição B3'};return{type:'desconhecido',confidence:.2,reason:'Tipo não reconhecido'}}
@@ -270,7 +265,7 @@
     async function askOpenAI(question){if(!state.config.openAiKey)throw new Error('API OpenAI não configurada.');const payload={model:state.config.openAiModel,temperature:Number(state.config.temperature||0.2),messages:[{role:'system',content:state.config.systemPrompt},{role:'user',content:`Pergunta: ${question}\n\nDADOS INTERNOS B3:\n${JSON.stringify(state.context,null,2)}\n\nDADOS BRAPI:\n${JSON.stringify(state.brapiData,null,2)}`}]};const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+state.config.openAiKey},body:JSON.stringify(payload)});const data=await r.json();if(!r.ok)throw new Error(data.error?.message||'Erro OpenAI');return data.choices?.[0]?.message?.content||'OpenAI respondeu sem texto.'}
     async function maybeBrapi(q){const tickers=extractTickers(q).slice(0,Number(state.config.brapiLimit||12));if(tickers.length)await fetchBrapi(tickers)}function extractTickers(q){const typed=String(q).toUpperCase().match(/\b[A-Z]{4}\d{1,2}[A-Z]?\b/g)||[];const top=[...state.positions].sort((a,b)=>b.valor-a.valor).slice(0,Number(state.config.brapiLimit||12)).map(p=>p.ticker);return [...new Set([...typed,...top])].filter(validTicker)}async function fetchBrapi(tickers){if(!state.config.brapiToken)throw new Error('Token BRAPI não configurado.');const url=`https://brapi.dev/api/quote/${encodeURIComponent(tickers.join(','))}?modules=summaryProfile,financialData,defaultKeyStatistics&token=${encodeURIComponent(state.config.brapiToken)}`;const r=await fetch(url);const data=await r.json();if(!r.ok)throw new Error(data.message||'Erro BRAPI');state.brapiData={updatedAt:new Date().toISOString(),tickers,raw:data};buildContext();return data}async function consultBrapiForTopAssets(){try{setStatus('Buscando dados BRAPI...', '');const tickers=extractTickers(aiQuestion.value||'');await fetchBrapi(tickers);setStatus('BRAPI atualizado: '+tickers.slice(0,8).join(', '),'ok');saveState()}catch(e){setStatus('Erro BRAPI: '+e.message,'err')}}
 
-    function renderAll(){renderMetrics();renderImport();renderChat();renderInsight();renderConfig();renderTables();renderJson()}function renderMetrics(){mFiles.textContent=state.imports.length;mAssets.textContent=Object.keys(state.assets).length;mValue.textContent=money(state.context?.resumo?.valorTotal||0);mGpt.textContent=state.config.openAiKey?'API':state.config.aiMode==='backend'?'Back':'—';mBrapi.textContent=state.config.brapiToken?'ON':'—'}function renderImport(){importList.innerHTML=state.imports.length?state.imports.map(i=>`<div class="file-item"><div><strong>${safe(i.fileName)}</strong><br><small>${safe(i.type)} • ${i.rowCount||0} linhas • ${safe(i.reason)}</small></div><span class="pill info">${safe(i.type)}</span></div>`).join(''):'<div class="alert info">Nenhum arquivo importado ainda.</div><div class="alert purple"><strong>Versão 6:</strong> os arquivos grandes são lidos e transformados em carteira, mas as planilhas brutas não ficam salvas no localStorage. Isso evita o erro de limite do navegador.</div>';const counts={};state.imports.forEach(i=>counts[i.type]=(counts[i.type]||0)+1);typeSummary.innerHTML=Object.entries(counts).map(([k,v])=>`<div class="alert ok"><strong>${safe(k)}</strong>: ${v}</div>`).join('')||'<div class="alert info">Aguardando dados.</div>';qualityBox.innerHTML=`<div class="alert info">Ativos válidos: ${Object.keys(state.assets).length}<br>Linhas sem ticker são ignoradas nos cálculos principais.<br>BRAPI: ${state.brapiData?.updatedAt?'atualizado em '+state.brapiData.updatedAt:'sem dados externos'}</div>`}function renderChat(){const base='<div class="chat-msg assistant"><strong>Guido Wealth IA v5</strong><p>Pronto para cruzar B3, memória, GPT e BRAPI. Faça perguntas incomuns e estratégicas.</p></div>';chatHistory.innerHTML=base+(state.chat||[]).map(m=>`<div class="chat-msg ${m.role}"><strong>${m.role==='user'?'Você':'Guido Wealth IA'}</strong><p>${safe(cleanText(m.text))}</p></div>`).join('');chatHistory.scrollTop=chatHistory.scrollHeight}function renderInsight(){const ins=state.currentInsight;if(!ins){dynamicResults.innerHTML='<div class="alert info">Faça uma pergunta para gerar cards, gráficos e missões.</div>';return}if(ins.intent==='thinking'){dynamicResults.innerHTML=`<div class="thinking-panel"><div class="thinking-header"><span class="pulse-orb"></span><span>Pensando e montando visualizações...</span></div><div class="thinking-bar"><span></span></div><div class="thinking-steps"><div class="thinking-step active"><span>1. Pergunta</span><strong>${safe(ins.question.slice(0,42))}</strong></div><div class="thinking-step active"><span>2. Dados B3</span><strong>${Object.keys(state.assets).length} ativos</strong></div><div class="thinking-step active"><span>3. BRAPI</span><strong>${state.brapiData?.updatedAt?'ativo':'opcional'}</strong></div><div class="thinking-step"><span>4. Visual</span><strong>criando</strong></div></div></div>`;return}dynamicResults.innerHTML=`<h2>${safe(ins.title)}</h2><div class="visual-answer"><strong>Resposta curta</strong><br>${safe(cleanText(ins.summary))}</div><div class="grid cols3" style="margin-top:12px">${ins.metrics.map(m=>`<div class="impact-card"><div class="big-number">${safe(m.value)}</div><div class="caption">${safe(m.label)}</div></div>`).join('')}</div>${ins.charts.map(renderChart).join('')}${ins.warnings.map(w=>`<div class="alert warn"><strong>Alerta:</strong> ${safe(w)}</div>`).join('')}<h3>Missões</h3>${ins.missions.map(m=>`<div class="alert purple">${safe(m)}</div>`).join('')}<div class="quick">${ins.nextQuestions.map(q=>`<button onclick="askPreset('${safe(q).replace(/'/g,'&#039;')}')">${safe(q)}</button>`).join('')}</div>`}function renderChart(ch){const max=Math.max(...(ch.data||[]).map(x=>Number(x[ch.valueKey]||0)),1);return `<div class="card" style="box-shadow:none;margin-top:12px"><h3>${safe(ch.title)}</h3>${(ch.data||[]).map(x=>{const v=Number(x[ch.valueKey]||0);const w=Math.max(6,Math.min(100,v/max*100));const show=ch.format==='money'?money(v):ch.format==='percent'?v.toFixed(1)+'%':v;return `<div class="chart-line"><span>${safe(x[ch.labelKey])}</span><div class="bar-wrap"><div class="bar" style="width:${w}%"></div></div><strong>${show}</strong></div>`}).join('')}<div class="sparkline">${(ch.data||[]).slice(0,16).map(x=>{const v=Number(x[ch.valueKey]||0);return `<span style="height:${Math.max(8,Math.min(100,v/max*100))}%"></span>`}).join('')}</div></div>`}function renderConfig(){
+    function renderAll(){renderMetrics();renderImport();renderChat();renderInsight();renderConfig();renderTables();renderJson()}function renderMetrics(){mFiles.textContent=state.imports.length;mAssets.textContent=Object.keys(state.assets).length;mValue.textContent=money(state.context?.resumo?.valorTotal||0);mGpt.textContent=state.config.openAiKey?'API':state.config.aiMode==='backend'?'Back':'—';mBrapi.textContent=state.config.brapiToken?'ON':'—'}function renderImport(){importList.innerHTML=state.imports.length?state.imports.map(i=>`<div class="file-item"><div><strong>${safe(i.fileName)}</strong><br><small>${safe(i.type)} • ${i.rowCount||0} linhas • ${safe(i.reason)}<br>Fingerprint: ${safe(i.fingerprint||'')}</small></div><span class="pill info">${safe(i.type)}</span></div>`).join(''):'<div class="alert info">Nenhum arquivo importado ainda.</div><div class="alert purple"><strong>Versão 7:</strong> os arquivos são processados na sessão e enviados ao Google. A base B3 não é gravada no localStorage, evitando a quota do navegador.</div>'; const counts={};state.imports.forEach(i=>counts[i.type]=(counts[i.type]||0)+1);typeSummary.innerHTML=Object.entries(counts).map(([k,v])=>`<div class="alert ok"><strong>${safe(k)}</strong>: ${v}</div>`).join('')||'<div class="alert info">Aguardando dados.</div>';qualityBox.innerHTML=`<div class="alert info">Ativos válidos: ${Object.keys(state.assets).length}<br>Linhas sem ticker são ignoradas nos cálculos principais.<br>BRAPI: ${state.brapiData?.updatedAt?'atualizado em '+state.brapiData.updatedAt:'sem dados externos'}</div>`}function renderChat(){const base='<div class="chat-msg assistant"><strong>Guido Wealth IA v5</strong><p>Pronto para cruzar B3, memória, GPT e BRAPI. Faça perguntas incomuns e estratégicas.</p></div>';chatHistory.innerHTML=base+(state.chat||[]).map(m=>`<div class="chat-msg ${m.role}"><strong>${m.role==='user'?'Você':'Guido Wealth IA'}</strong><p>${safe(cleanText(m.text))}</p></div>`).join('');chatHistory.scrollTop=chatHistory.scrollHeight}function renderInsight(){const ins=state.currentInsight;if(!ins){dynamicResults.innerHTML='<div class="alert info">Faça uma pergunta para gerar cards, gráficos e missões.</div>';return}if(ins.intent==='thinking'){dynamicResults.innerHTML=`<div class="thinking-panel"><div class="thinking-header"><span class="pulse-orb"></span><span>Pensando e montando visualizações...</span></div><div class="thinking-bar"><span></span></div><div class="thinking-steps"><div class="thinking-step active"><span>1. Pergunta</span><strong>${safe(ins.question.slice(0,42))}</strong></div><div class="thinking-step active"><span>2. Dados B3</span><strong>${Object.keys(state.assets).length} ativos</strong></div><div class="thinking-step active"><span>3. BRAPI</span><strong>${state.brapiData?.updatedAt?'ativo':'opcional'}</strong></div><div class="thinking-step"><span>4. Visual</span><strong>criando</strong></div></div></div>`;return}dynamicResults.innerHTML=`<h2>${safe(ins.title)}</h2><div class="visual-answer"><strong>Resposta curta</strong><br>${safe(cleanText(ins.summary))}</div><div class="grid cols3" style="margin-top:12px">${ins.metrics.map(m=>`<div class="impact-card"><div class="big-number">${safe(m.value)}</div><div class="caption">${safe(m.label)}</div></div>`).join('')}</div>${ins.charts.map(renderChart).join('')}${ins.warnings.map(w=>`<div class="alert warn"><strong>Alerta:</strong> ${safe(w)}</div>`).join('')}<h3>Missões</h3>${ins.missions.map(m=>`<div class="alert purple">${safe(m)}</div>`).join('')}<div class="quick">${ins.nextQuestions.map(q=>`<button onclick="askPreset('${safe(q).replace(/'/g,'&#039;')}')">${safe(q)}</button>`).join('')}</div>`}function renderChart(ch){const max=Math.max(...(ch.data||[]).map(x=>Number(x[ch.valueKey]||0)),1);return `<div class="card" style="box-shadow:none;margin-top:12px"><h3>${safe(ch.title)}</h3>${(ch.data||[]).map(x=>{const v=Number(x[ch.valueKey]||0);const w=Math.max(6,Math.min(100,v/max*100));const show=ch.format==='money'?money(v):ch.format==='percent'?v.toFixed(1)+'%':v;return `<div class="chart-line"><span>${safe(x[ch.labelKey])}</span><div class="bar-wrap"><div class="bar" style="width:${w}%"></div></div><strong>${show}</strong></div>`}).join('')}<div class="sparkline">${(ch.data||[]).slice(0,16).map(x=>{const v=Number(x[ch.valueKey]||0);return `<span style="height:${Math.max(8,Math.min(100,v/max*100))}%"></span>`}).join('')}</div></div>`}function renderConfig(){
       loadApiKeysOnlyFromBrowser();
       openAiKey.value = state.config.openAiKey ? '••••••••••••••••' : '';
       openAiModel.value = state.config.openAiModel;
@@ -343,8 +338,90 @@
       dlgBackendUrl.value = state.config.backendUrl;
       dlgSystemPrompt.value = state.config.systemPrompt;
       configDialog.showModal();
-    }function copyPrompt(){navigator.clipboard.writeText(`${state.config.systemPrompt}\n\nDADOS B3:\n${JSON.stringify(state.context,null,2)}\n\nBRAPI:\n${JSON.stringify(state.brapiData,null,2)}`);alert('Contexto copiado.')}function exportAllJson(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gwi-v5-backup.json';a.click();URL.revokeObjectURL(a.href)}function clearAll(){if(confirm('Zerar base local?')){state=initialState();saveState()}}async function testBackend(){try{const url=new URL(state.config.backendUrl);url.searchParams.set('action','ping');url.searchParams.set('callback','gwi_ping_'+Date.now());setStatus('Teste backend via navegador iniciado. Se falhar, use pergunta normal.', '');alert('Backend configurado: '+state.config.backendUrl)}catch(e){setStatus(e.message,'err')}}function saveInsightToMemory(){if(!state.currentInsight)return alert('Gere um insight primeiro.');state.pinned.unshift(state.currentInsight);saveState();alert('Insight salvo localmente.')}function copyJson(){navigator.clipboard.writeText(jsonBox.textContent);alert('JSON copiado.')}
-    loadApiKeysOnlyFromBrowser();buildContext();renderAll();
+    }function copyPrompt(){navigator.clipboard.writeText(`${state.config.systemPrompt}\n\nDADOS B3:\n${JSON.stringify(state.context,null,2)}\n\nBRAPI:\n${JSON.stringify(state.brapiData,null,2)}`);alert('Contexto copiado.')}function exportAllJson(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='gwi-v5-backup.json';a.click();URL.revokeObjectURL(a.href)}function clearAll(){if(confirm('Limpar apenas a sessão atual? Os dados enviados ao Google permanecem no Google Docs.')){const keepConfig=state.config;const keepBackend=state.backend;state=initialState();state.config=keepConfig;state.backend=keepBackend;renderAll();setStatus('Sessão local limpa. A memória do Google não foi apagada.', 'ok')}}async function testBackend(){try{setStatus('Testando backend Google...', '');const data=await jsonpRequest({action:'ping'});if(!data.ok) throw new Error(data.error || 'Backend retornou erro');state.backend.ok=true;state.backend.docUrl=data.docUrl||null;state.backend.lastPing=new Date().toISOString();setStatus('Backend Google ativo. Documento conectado.', 'ok');renderAll();}catch(e){setStatus('Erro no backend: '+e.message,'err')}}
+
+    function jsonpRequest(params){
+      return new Promise((resolve,reject)=>{
+        const cb='gwi_v7_'+Date.now()+'_'+Math.floor(Math.random()*999999);
+        params.callback=cb;
+        const url=new URL(state.config.backendUrl);
+        Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+        const script=document.createElement('script');
+        script.src=url.toString();
+        const timeout=setTimeout(()=>{cleanup();reject(new Error('Tempo esgotado no backend'))},20000);
+        function cleanup(){clearTimeout(timeout);delete window[cb];if(script.parentNode)script.parentNode.removeChild(script)}
+        window[cb]=data=>{cleanup();resolve(data)};
+        script.onerror=()=>{cleanup();reject(new Error('Falha JSONP'))};
+        document.body.appendChild(script);
+      });
+    }
+
+    async function syncToGoogleAfterImport(){
+      try{
+        setStatus('Verificando duplicidade e enviando base processada ao Google...', '');
+        const previous = await readGoogleMemorySafe();
+        const dedupe = analyzeGoogleDedup(previous);
+        if(dedupe.importAlreadySeen){
+          setStatus('Arquivo já capturado anteriormente no Google. Dados repetidos não foram reenviados.', 'ok');
+          return;
+        }
+        const snapshot = makeGoogleSnapshot();
+        const payload = {
+          action:'save_memory',
+          pin: backendPin?.value || '2026',
+          author:'Guido Wealth Intelligence v7',
+          text:'GWI_V7_IMPORT_SNAPSHOT
+' + JSON.stringify({
+            fingerprintSet: snapshot.fingerprints,
+            imports: snapshot.imports,
+            resumo: snapshot.context?.resumo || {},
+            indices: snapshot.context?.indices || {},
+            dedupe
+          }, null, 2),
+          bundle:snapshot
+        };
+        const r=await fetch(state.config.backendUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+        const data=JSON.parse(await r.text());
+        if(!data.ok) throw new Error(data.error || 'Erro ao salvar no Google');
+        state.backend.ok=true;state.backend.docUrl=data.docUrl||state.backend.docUrl;state.backend.lastPing=new Date().toISOString();
+        setStatus('Base processada enviada ao Google. Navegador limpo: nada da B3 foi salvo no localStorage.', 'ok');
+      }catch(e){
+        setStatus('Arquivo processado na sessão, mas envio ao Google falhou: '+e.message, 'err');
+      }
+    }
+
+    async function readGoogleMemorySafe(){
+      try{return await jsonpRequest({action:'read'})}catch(e){return null}
+    }
+
+    function analyzeGoogleDedup(previous){
+      const current = buildFingerprints();
+      const previousTexts = (((previous||{}).data||{}).entries||[]).map(e => String(e.text||''));
+      const joined = previousTexts.join('
+');
+      const currentImports = current.imports || [];
+      const importAlreadySeen = currentImports.length && currentImports.every(fp => joined.includes(fp));
+      const repeatedMovements = (current.movements||[]).filter(fp => joined.includes(fp)).length;
+      const repeatedIncome = (current.income||[]).filter(fp => joined.includes(fp)).length;
+      return {importAlreadySeen, repeatedMovements, repeatedIncome, currentImportFingerprints: currentImports};
+    }async function saveInsightToMemory(){
+      if(!state.currentInsight) return alert('Gere um insight primeiro.');
+      try{
+        const payload={
+          action:'save_memory',
+          pin:backendPin?.value||'2026',
+          author:'Guido Wealth Intelligence v7',
+          text:'GWI_V7_INSIGHT
+'+JSON.stringify(state.currentInsight,null,2),
+          bundle:{insight:state.currentInsight, context:state.context}
+        };
+        const r=await fetch(state.config.backendUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});
+        const data=JSON.parse(await r.text());
+        if(!data.ok) throw new Error(data.error||'Erro ao salvar insight');
+        setStatus('Insight salvo no Google Docs, não no navegador.', 'ok');
+      }catch(e){setStatus('Erro ao salvar insight no Google: '+e.message,'err')}
+    }function copyJson(){navigator.clipboard.writeText(jsonBox.textContent);alert('JSON copiado.')}
+    loadApiKeysOnlyFromBrowser();loadApiKeysOnlyFromBrowser();buildContext();renderAll();
   </script>
 </body>
 </html>
